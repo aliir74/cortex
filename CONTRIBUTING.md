@@ -2,10 +2,10 @@
 
 ## Adding a New Skill
 
-1. Create a directory under `plugins/developer-tools/skills/`:
+1. Create a directory under `plugins/cortex/skills/`:
 
 ```
-plugins/developer-tools/skills/my-skill/
+plugins/cortex/skills/my-skill/
 └── SKILL.md
 ```
 
@@ -43,7 +43,7 @@ Detailed instructions for Claude Code to follow when this skill is invoked.
 
 ## Adding or Updating Hooks
 
-Hooks live in `plugins/developer-tools/hooks/`. The `hooks.json` file registers them with Claude Code.
+Hooks live in `plugins/cortex/hooks/`. The `hooks.json` file registers them with Claude Code.
 
 ## PR Process
 

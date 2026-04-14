@@ -1,9 +1,0 @@
-{
-  "name": "developer-tools",
-  "version": "1.0.0",
-  "description": "Developer productivity skills for Claude Code — PR monitoring, project management, research, browser verification, and more",
-  "author": {
-    "name": "Ali Irani",
-    "url": "https://github.com/aliir74"
-  }
-}

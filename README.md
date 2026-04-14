@@ -1,37 +1,36 @@
-# Claude Developer Tools
+# Cortex
 
-A Claude Code plugin with developer productivity skills — PR monitoring, project management, research, browser-based verification, and more.
+Claude Code skills for developer productivity, research, communication, and workflow automation.
 
 ## Setup
 
 ### 1. Add the marketplace
 
 ```bash
-claude plugin marketplace add aliir74/claude-developer-tools
+claude plugin marketplace add aliir74/cortex
 ```
 
 ### 2. Install the plugin
 
 ```bash
-claude plugin install developer-tools
+claude plugin install cortex
 ```
 
 After this, updates pull automatically at Claude Code startup.
 
 ## Available Skills
 
-Invoke skills with `/developer-tools:<skill-name>`.
+Invoke skills with `/cortex:<skill-name>`.
 
 ### User-Invoked
 
 | Skill | Description | Usage |
 |-------|-------------|-------|
-| `babysit-pr` | Monitor a PR — auto-fix CI failures, address review feedback, track deploys | `/loop 5m /developer-tools:babysit-pr #123` |
-| `clickup-cli` | ClickUp CLI operations — tasks, comments, search, sprints, time tracking | `/developer-tools:clickup-cli` |
-| `verify-deployment` | Verify deployed code in preview/staging via browser automation | `/developer-tools:verify-deployment CU-abc123` |
-| `deploy-preview` | Trigger preview deployment and monitor for deploy URL | `/developer-tools:deploy-preview` |
-| `codex-ask` | Get a second opinion from OpenAI Codex CLI | `/developer-tools:codex-ask Is this approach correct?` |
-| `session-handoff` | Generate structured handoff document for another agent/engineer | `/developer-tools:session-handoff` |
+| `babysit-pr` | Monitor a PR — auto-fix CI failures, address review feedback, track deploys | `/loop 5m /cortex:babysit-pr #123` |
+| `clickup-cli` | ClickUp CLI operations — tasks, comments, search, sprints, time tracking | `/cortex:clickup-cli` |
+| `deploy-preview` | Trigger preview deployment and monitor for deploy URL | `/cortex:deploy-preview` |
+| `codex-ask` | Get a second opinion from OpenAI Codex CLI | `/cortex:codex-ask Is this approach correct?` |
+| `session-handoff` | Generate structured handoff document for another agent/engineer | `/cortex:session-handoff` |
 
 ### Auto-Triggered
 
@@ -40,7 +39,6 @@ These skills activate automatically when Claude detects you're working in a rele
 | Skill | Triggers When |
 |-------|---------------|
 | `deep-research` | Researching topics — "what's the latest on X", "research X for me" |
-| `dd-security-vulns` | Reviewing Datadog CSM vulnerability findings |
 | `create-permission-hook` | Creating permission hooks for CLI tools |
 | `gws-cli` | Interacting with Google Workspace (Gmail, Calendar, Drive, Sheets) |
 
@@ -62,11 +60,9 @@ Some skills require external CLI tools. See [SETUP.md](SETUP.md) for installatio
 |-------|----------|
 | `babysit-pr` | `gh` (GitHub CLI) |
 | `clickup-cli` | `clickup` (ClickUp CLI) |
-| `verify-deployment` | `agent-browser`, `clickup`, `gh` — see [SETUP.md](SETUP.md) |
 | `deploy-preview` | `gh` (GitHub CLI) |
 | `gws-cli` | `gws` (Google Workspace CLI) |
 | `codex-ask` | `codex` (OpenAI Codex CLI) |
-| `dd-security-vulns` | Datadog API credentials |
 
 ## Contributing
 
