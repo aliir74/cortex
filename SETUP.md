@@ -114,3 +114,22 @@ For self-hosted GitLab, point the CLI at the right host:
 ```bash
 glab config set -g host gitlab.example.com
 ```
+
+### commit-push-pr
+
+Requires `git` plus a host CLI matching the remote:
+
+- **GitHub remotes** → `gh` (see the **babysit-pr** section above for install + auth).
+- **GitLab remotes** → `glab` (see the **glab-cli** section above).
+
+### python-project-setup
+
+Requires `uv` (Python package manager + virtualenv):
+
+```bash
+# macOS / Linux installer
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# or via Homebrew
+brew install uv
+```
