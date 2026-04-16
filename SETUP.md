@@ -46,6 +46,94 @@ npm install -g @openai/codex
 codex login
 ```
 
+### slack-cli
+
+Requires the [`agent-slack`](https://github.com/stablyai/agent-slack) CLI.
+
+```bash
+# Recommended (Bun-based installer):
+curl -fsSL https://raw.githubusercontent.com/stablyai/agent-slack/main/install.sh | sh
+
+# Or via npm (Node >= 22.5):
+npm i -g agent-slack
+```
+
+Authenticate (on macOS/Windows, Slack Desktop data is read automatically):
+
+```bash
+agent-slack auth whoami
+# Fallbacks if needed:
+agent-slack auth import-desktop
+agent-slack auth import-chrome
+```
+
+### bird-cli
+
+Requires the `bird` CLI for X/Twitter. Install via Bun:
+
+```bash
+bun install -g bird
+```
+
+Verify auth:
+
+```bash
+bird whoami
+```
+
+If `bird` is configured for explicit credentials (`cookieSource: []` in
+`~/.config/bird/config.json5`), populate `~/.config/bird/accounts.json`
+with `ct0` and `auth_token` per account.
+
+### tgcli
+
+Requires the `tgcli` CLI:
+
+```bash
+brew install kfastov/tap/tgcli
+```
+
+First-time setup needs API credentials from <https://my.telegram.org/apps>:
+
+```bash
+tgcli auth
+tgcli doctor
+```
+
+### glab-cli
+
+Requires the GitLab CLI:
+
+```bash
+brew install glab
+glab auth login
+```
+
+For self-hosted GitLab, point the CLI at the right host:
+
+```bash
+glab config set -g host gitlab.example.com
+```
+
+### commit-push-pr
+
+Requires `git` plus a host CLI matching the remote:
+
+- **GitHub remotes** → `gh` (see the **babysit-pr** section above for install + auth).
+- **GitLab remotes** → `glab` (see the **glab-cli** section above).
+
+### python-project-setup
+
+Requires `uv` (Python package manager + virtualenv):
+
+```bash
+# macOS / Linux installer
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# or via Homebrew
+brew install uv
+```
+
 ### convert-date
 
 Requires Python 3 with the `jdatetime` package:
@@ -78,4 +166,4 @@ Requires a Raindrop.io API token:
 
 ### fetch-twitter-bookmarks
 
-Requires the `bird` CLI. Once the `bird-cli` skill is installed in this plugin, follow its **bird-cli** section above (added by the `skill/cli-wrappers` PR) for install + auth. Optional: install `yt-dlp` (`brew install yt-dlp`) if you want the skill to download tweet videos when `download_media=true`.
+Requires the `bird` CLI (see the **bird-cli** section above for install + auth). Optional: install `yt-dlp` (`brew install yt-dlp`) if you want the skill to download tweet videos when `download_media=true`.
