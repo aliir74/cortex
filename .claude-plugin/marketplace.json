@@ -1,0 +1,18 @@
+{
+  "name": "cortex",
+  "version": "0.1.0",
+  "description": "Claude Code skills for developer productivity, research, communication, and workflow automation",
+  "owner": {
+    "name": "Ali Irani",
+    "email": "aliirani74@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "cortex",
+      "description": "Claude Code skills for developer productivity, research, communication, and workflow automation",
+      "version": "0.1.0",
+      "source": "./plugins/cortex",
+      "category": "development"
+    }
+  ]
+}
