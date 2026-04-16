@@ -13,6 +13,19 @@ Monitor a GitHub PR on a recurring loop. Automatically fix failed CI checks, add
 
 This skill is designed to run inside a `/loop`. Each invocation performs one check cycle and exits. The loop handles recurring execution.
 
+## User Preferences
+
+Load preferences at the start of every run:
+
+1. If `${CLAUDE_PLUGIN_DATA}/preferences/babysit-pr.md` does not exist, seed it:
+   ```bash
+   mkdir -p "${CLAUDE_PLUGIN_DATA}/preferences"
+   cp "${CLAUDE_PLUGIN_ROOT}/skills/babysit-pr/preferences.template.md" \
+      "${CLAUDE_PLUGIN_DATA}/preferences/babysit-pr.md"
+   ```
+   Mention it once: "Seeded preferences at `${CLAUDE_PLUGIN_DATA}/preferences/babysit-pr.md` — edit anytime to customize."
+2. Read it. Use `notification_command` for every event (falls back to the default `osascript` line under Notifications), `max_retries` for the retry cap, `max_idle_streak` for the idle cap, `state_dir` for the JSON state file location, `worktree_dir` for temporary worktrees, and `extra_notification_command` for a second channel (Telegram/Slack) fired alongside the main one. Empty fields mean "use the default."
+
 ## Argument Parsing
 
 1. If argument is a GitHub URL -> extract owner/repo and PR number from URL

@@ -7,6 +7,19 @@ argument-hint: <task-id or search query>
 
 # ClickUp with clickup CLI
 
+## User Preferences
+
+Load preferences at the start of every run:
+
+1. If `${CLAUDE_PLUGIN_DATA}/preferences/clickup-cli.md` does not exist, seed it:
+   ```bash
+   mkdir -p "${CLAUDE_PLUGIN_DATA}/preferences"
+   cp "${CLAUDE_PLUGIN_ROOT}/skills/clickup-cli/preferences.template.md" \
+      "${CLAUDE_PLUGIN_DATA}/preferences/clickup-cli.md"
+   ```
+   Mention it once: "Seeded preferences at `${CLAUDE_PLUGIN_DATA}/preferences/clickup-cli.md` — edit anytime to customize."
+2. Read it. Use `default_list_id` wherever this doc shows `<LIST_ID>`, `default_space` for `--space`, `default_folder` for `--folder`, and `default_assignee` when the user asks you to assign without naming someone. Empty fields mean "no default — ask the user or use the CLI's own default."
+
 ## Overview
 
 `clickup` is the ClickUp CLI. Use it for all ClickUp platform operations (tasks, comments, search, sprints).

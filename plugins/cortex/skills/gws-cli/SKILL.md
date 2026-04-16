@@ -6,6 +6,19 @@ model: sonnet
 
 # Google Workspace with gws CLI
 
+## User Preferences
+
+Load preferences at the start of every run:
+
+1. If `${CLAUDE_PLUGIN_DATA}/preferences/gws-cli.md` does not exist, seed it:
+   ```bash
+   mkdir -p "${CLAUDE_PLUGIN_DATA}/preferences"
+   cp "${CLAUDE_PLUGIN_ROOT}/skills/gws-cli/preferences.template.md" \
+      "${CLAUDE_PLUGIN_DATA}/preferences/gws-cli.md"
+   ```
+   Mention it once: "Seeded preferences at `${CLAUDE_PLUGIN_DATA}/preferences/gws-cli.md` — edit anytime to customize."
+2. Read it. When `GOOGLE_WORKSPACE_CLI_ACCOUNT` is not set, prefix commands with `default_account`. Use `default_calendar` when the user does not pass `--calendar` to `+agenda`/`+insert`. Use `default_triage_max` for `gws gmail +triage --max`. CC `personal_email` on outgoing mail only when the user asks you to CC themselves. Empty fields mean "use the gws CLI default."
+
 ## Auth & Account Setup
 
 gws uses OAuth2 credentials stored per-account. Multiple accounts can be registered simultaneously.
