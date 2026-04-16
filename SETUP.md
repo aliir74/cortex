@@ -28,15 +28,6 @@ npm install -g clickup-cli
 
 Authenticate: `clickup auth login`
 
-### deploy-preview
-
-Requires the GitHub CLI:
-
-```bash
-brew install gh
-gh auth login
-```
-
 ### gws-cli
 
 Requires the Google Workspace CLI:

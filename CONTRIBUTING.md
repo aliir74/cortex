@@ -113,7 +113,7 @@ Hooks live in `plugins/cortex/hooks/`. The `hooks.json` file registers them with
 
 ## PR Process
 
-1. Branch from `master`
+1. Branch from `main`
 2. Add/modify your skill or hook
 3. Open a PR
 4. Get at least one review
