@@ -48,20 +48,23 @@ codex login
 
 ### slack-cli
 
-Requires the `agent-slack` CLI on your `PATH`. The skill is written for an
-`agent-slack`-style command surface (`agent-slack message list`,
-`agent-slack message send`, etc.).
-
-> TODO: replace this block with the exact install command for the
-> `agent-slack` distribution you use. A common pattern is to install via
-> Bun (`bun install -g <package>`) and source the binary path in your
-> shell init.
-
-Authenticate by importing credentials from Slack Desktop:
+Requires the [`agent-slack`](https://github.com/stablyai/agent-slack) CLI.
 
 ```bash
+# Recommended (Bun-based installer):
+curl -fsSL https://raw.githubusercontent.com/stablyai/agent-slack/main/install.sh | sh
+
+# Or via npm (Node >= 22.5):
+npm i -g agent-slack
+```
+
+Authenticate (on macOS/Windows, Slack Desktop data is read automatically):
+
+```bash
+agent-slack auth whoami
+# Fallbacks if needed:
 agent-slack auth import-desktop
-agent-slack auth test
+agent-slack auth import-chrome
 ```
 
 ### bird-cli
