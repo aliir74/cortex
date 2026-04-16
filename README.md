@@ -48,6 +48,7 @@ These skills activate automatically when Claude detects you're working in a rele
 | `gws-cli` | Interacting with Google Workspace (Gmail, Calendar, Drive, Sheets) |
 | `python-project-setup` | Setting up new Python projects (uv + ruff + pyright + pytest) |
 | `slack-cli` | Interacting with Slack — reading, searching, sending, reactions |
+| `snow-cli` | Running Snowflake operations — SQL queries, schema inspection, stages, Cortex |
 | `tgcli` | Interacting with Telegram — reading chats, sending messages, searching |
 
 ## Shared Hooks
@@ -59,6 +60,10 @@ Auto-allows read-only ClickUp commands (`task view`, `task list`, `task search`,
 ### Google Workspace Permission Gate
 
 Auto-allows read-only Google Workspace commands (`+triage`, `+agenda`, `+read`, message list/get). Write operations (`+send`, `+insert`, event create/update/delete) prompt for user confirmation.
+
+### Snowflake Permission Gate
+
+Auto-allows read-only Snowflake commands (`snow connection`, `snow object list/describe`, `snow stage list`, `snow cortex`, `snow logs`). Write/execute operations (`snow sql`, `create`, `drop`, `deploy`, `copy`) prompt for user confirmation.
 
 ## Prerequisites
 
@@ -78,6 +83,7 @@ Some skills require external CLI tools. See [SETUP.md](SETUP.md) for installatio
 | `gws-cli` | `gws` (Google Workspace CLI) |
 | `python-project-setup` | `uv` |
 | `slack-cli` | `agent-slack` (Slack CLI) |
+| `snow-cli` | `snow` (Snowflake CLI) |
 | `tgcli` | `tgcli` (Telegram CLI) |
 
 ## Contributing

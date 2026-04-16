@@ -70,3 +70,12 @@ Install commands for every CLI live in the repo-root `SETUP.md`. Each CLI-depend
 ## Hooks
 
 Hooks in `hooks.json` register permission gates that auto-allow read-only CLI operations and prompt for writes. Each hook entry specifies the tool pattern to match and the allow/deny logic.
+
+## Keeping docs in sync
+
+When adding or removing a skill or hook, always update **both** `README.md` and `SETUP.md` in the same PR — never just one:
+
+- `README.md` — add/remove the skill in the Auto-Triggered or User-Invoked table, add the hook under "Shared Hooks", and add the external CLI in the Prerequisites table.
+- `SETUP.md` — add/remove the install section for any new external CLI dependency.
+
+Forgetting the README update is a recurring miss; treat it as part of the skill/hook change, not a follow-up.
