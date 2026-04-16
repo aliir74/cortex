@@ -9,6 +9,19 @@ argument-hint: [--files file1,file2] [--write] [--model name] <prompt>
 
 Send arbitrary prompts and context to OpenAI Codex CLI (`codex exec`) from Claude Code. No MCP, no git dependency — just direct CLI.
 
+## User Preferences
+
+Load preferences at the start of every run:
+
+1. If `${CLAUDE_PLUGIN_DATA}/preferences/codex-ask.md` does not exist, seed it:
+   ```bash
+   mkdir -p "${CLAUDE_PLUGIN_DATA}/preferences"
+   cp "${CLAUDE_PLUGIN_ROOT}/skills/codex-ask/preferences.template.md" \
+      "${CLAUDE_PLUGIN_DATA}/preferences/codex-ask.md"
+   ```
+   Mention it once: "Seeded preferences at `${CLAUDE_PLUGIN_DATA}/preferences/codex-ask.md` — edit anytime to customize."
+2. Read it. Use `default_model` when the user does not pass `--model`, `default_effort` when they do not pass `--effort`, `default_timeout_ms` as the Bash call timeout, and `result_file` for the `-o` output path. Empty fields mean "use the default documented below."
+
 ## Usage
 
 ```

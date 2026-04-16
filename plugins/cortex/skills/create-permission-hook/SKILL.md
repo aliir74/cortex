@@ -7,6 +7,19 @@ description: Use when creating a dynamic permission hook for a CLI tool to gate 
 
 Dynamic PreToolUse hooks that intercept Bash commands and return allow/ask/deny decisions based on command analysis or runtime state.
 
+## User Preferences
+
+Load preferences at the start of every run:
+
+1. If `${CLAUDE_PLUGIN_DATA}/preferences/create-permission-hook.md` does not exist, seed it:
+   ```bash
+   mkdir -p "${CLAUDE_PLUGIN_DATA}/preferences"
+   cp "${CLAUDE_PLUGIN_ROOT}/skills/create-permission-hook/preferences.template.md" \
+      "${CLAUDE_PLUGIN_DATA}/preferences/create-permission-hook.md"
+   ```
+   Mention it once: "Seeded preferences at `${CLAUDE_PLUGIN_DATA}/preferences/create-permission-hook.md` — edit anytime to customize."
+2. Read it. Use `default_hook_dir` as the output directory for new hook scripts, `default_permissions_toml_path` as the file to append allow rules to, and `default_settings_json_path` as the settings file where PreToolUse hooks get registered. Empty fields mean "use the defaults documented below."
+
 ## When to Use
 
 **Pattern A — Read/Write Gating:** The CLI sends messages, modifies external state, or has destructive commands. Gate writes, allow reads.

@@ -5,6 +5,19 @@ description: Use when researching any topic - technical docs, best practices, AP
 
 # Deep Research
 
+## User Preferences
+
+Load preferences at the start of every run:
+
+1. If `${CLAUDE_PLUGIN_DATA}/preferences/deep-research.md` does not exist, seed it:
+   ```bash
+   mkdir -p "${CLAUDE_PLUGIN_DATA}/preferences"
+   cp "${CLAUDE_PLUGIN_ROOT}/skills/deep-research/preferences.template.md" \
+      "${CLAUDE_PLUGIN_DATA}/preferences/deep-research.md"
+   ```
+   Mention it once: "Seeded preferences at `${CLAUDE_PLUGIN_DATA}/preferences/deep-research.md` — edit anytime to customize."
+2. Read it. If `default_depth` is set, skip the depth AskUserQuestion and use it directly. Use `research_output_dir` as the save destination (otherwise ask the user before saving). Use `subagent_model` as the model for research sub-agents (otherwise `sonnet`). If `personal_context_files` is set and the topic is personal, read those files before searching.
+
 ## Overview
 
 Research skill that discovers broadly via web search, then verifies against official sources. The main session acts as **Lead Researcher** — orchestrating iterative rounds of sub-agents, reviewing output between rounds, and spawning deeper searches based on findings. Adapts depth to query complexity.

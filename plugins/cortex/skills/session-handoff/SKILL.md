@@ -8,6 +8,19 @@ disable-model-invocation: true
 
 Generate a structured handoff document from the current conversation so another AI agent or engineer can pick up the work.
 
+## User Preferences
+
+Load preferences at the start of every run:
+
+1. If `${CLAUDE_PLUGIN_DATA}/preferences/session-handoff.md` does not exist, seed it:
+   ```bash
+   mkdir -p "${CLAUDE_PLUGIN_DATA}/preferences"
+   cp "${CLAUDE_PLUGIN_ROOT}/skills/session-handoff/preferences.template.md" \
+      "${CLAUDE_PLUGIN_DATA}/preferences/session-handoff.md"
+   ```
+   Mention it once: "Seeded preferences at `${CLAUDE_PLUGIN_DATA}/preferences/session-handoff.md` — edit anytime to customize."
+2. Read it. `output_method` controls whether the handoff goes to `clipboard`, a `file`, or `both` (default: clipboard). When writing to a file, resolve `output_file_path` with `$DATE` → today's YYYY-MM-DD and `$SLUG` → short kebab-case title. Append any `extra_sections` to the handoff template before presenting it.
+
 ## Process
 
 1. **Review the full conversation** for: objectives, approaches tried, outcomes, decisions, file changes, and open items
