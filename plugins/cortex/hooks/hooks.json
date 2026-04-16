@@ -1,3 +1,12 @@
 {
-  "hooks": []
+  "hooks": [
+    {
+      "type": "PreToolUse",
+      "matcher": "Bash",
+      "hooks": [{
+        "type": "command",
+        "command": "bash hooks/gws-permission-check.sh"
+      }]
+    }
+  ]
 }
