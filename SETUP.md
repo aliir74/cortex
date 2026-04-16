@@ -45,3 +45,27 @@ Requires the OpenAI Codex CLI:
 npm install -g @openai/codex
 codex login
 ```
+
+### commit-push-pr
+
+Requires `git` plus a host CLI matching the remote:
+
+- **GitHub remotes** -> `gh` (see the **babysit-pr** section above for install + auth).
+- **GitLab remotes** -> `glab`:
+
+```bash
+brew install glab
+glab auth login
+```
+
+### python-project-setup
+
+Requires `uv` (Python package manager + virtualenv):
+
+```bash
+# macOS / Linux installer
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# or via Homebrew
+brew install uv
+```
