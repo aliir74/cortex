@@ -107,6 +107,22 @@ default_assignee:
 - **Never commit** user-resolved preferences — those live in `${CLAUDE_PLUGIN_DATA}/preferences/` on each user's machine, outside the repo.
 - **Reference the user's file** in SKILL.md as `${CLAUDE_PLUGIN_DATA}/preferences/<skill-name>.md`, not a relative path — there is no `$SKILL_DIR` env var, and CWD is the user's project.
 
+## External CLI Dependencies
+
+If your skill invokes an external CLI binary (e.g., `gh`, `clickup`, `gws`, `codex`):
+
+1. Add a `## Prerequisites` section near the top of your SKILL.md (after the H1 title, before `## User Preferences`):
+
+   ```markdown
+   ## Prerequisites
+
+   Requires the `<binary>` CLI. If it's not installed, point the user to `SETUP.md` at the plugin root (section: **<skill-name>**) and stop until it's available.
+   ```
+
+2. Add a matching entry to the repo-root `SETUP.md` with the install command and any auth step.
+
+Do not inline a full install walkthrough in SKILL.md — it's loaded on every skill invocation and becomes dead weight after first install. SETUP.md is the single source of truth for setup steps.
+
 ## Adding or Updating Hooks
 
 Hooks live in `plugins/cortex/hooks/`. The `hooks.json` file registers them with Claude Code.

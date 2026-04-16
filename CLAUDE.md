@@ -65,6 +65,8 @@ Skills invoke external CLIs via Bash — there are no SDK integrations:
 - `gws` — Google Workspace CLI (gws-cli)
 - `codex` — OpenAI Codex CLI (codex-ask)
 
+Install commands for every CLI live in the repo-root `SETUP.md`. Each CLI-dependent SKILL.md carries a short `## Prerequisites` section pointing users to the matching section of `SETUP.md` when the binary is missing — do not inline install walkthroughs in SKILL.md (dead weight on every invocation; progressive disclosure via SETUP.md is the convention).
+
 ## Hooks
 
 Hooks in `hooks.json` register permission gates that auto-allow read-only CLI operations and prompt for writes. Each hook entry specifies the tool pattern to match and the allow/deny logic.
