@@ -60,7 +60,7 @@ Key frontmatter fields:
 ## External CLI Dependencies
 
 Skills invoke external CLIs via Bash — there are no SDK integrations:
-- `gh` — GitHub CLI (babysit-pr, deploy-preview)
+- `gh` — GitHub CLI (babysit-pr)
 - `clickup` — ClickUp CLI (clickup-cli)
 - `gws` — Google Workspace CLI (gws-cli)
 - `codex` — OpenAI Codex CLI (codex-ask)

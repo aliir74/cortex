@@ -27,8 +27,6 @@ Invoke skills with `/cortex:<skill-name>`.
 | Skill | Description | Usage |
 |-------|-------------|-------|
 | `babysit-pr` | Monitor a PR — auto-fix CI failures, address review feedback, track deploys | `/loop 5m /cortex:babysit-pr #123` |
-| `clickup-cli` | ClickUp CLI operations — tasks, comments, search, sprints, time tracking | `/cortex:clickup-cli` |
-| `deploy-preview` | Trigger preview deployment and monitor for deploy URL | `/cortex:deploy-preview` |
 | `codex-ask` | Get a second opinion from OpenAI Codex CLI | `/cortex:codex-ask Is this approach correct?` |
 | `session-handoff` | Generate structured handoff document for another agent/engineer | `/cortex:session-handoff` |
 
@@ -38,8 +36,9 @@ These skills activate automatically when Claude detects you're working in a rele
 
 | Skill | Triggers When |
 |-------|---------------|
-| `deep-research` | Researching topics — "what's the latest on X", "research X for me" |
+| `clickup-cli` | Running ClickUp operations — tasks, comments, search, sprints, time tracking |
 | `create-permission-hook` | Creating permission hooks for CLI tools |
+| `deep-research` | Researching topics — "what's the latest on X", "research X for me" |
 | `gws-cli` | Interacting with Google Workspace (Gmail, Calendar, Drive, Sheets) |
 
 ## Shared Hooks
@@ -60,7 +59,6 @@ Some skills require external CLI tools. See [SETUP.md](SETUP.md) for installatio
 |-------|----------|
 | `babysit-pr` | `gh` (GitHub CLI) |
 | `clickup-cli` | `clickup` (ClickUp CLI) |
-| `deploy-preview` | `gh` (GitHub CLI) |
 | `gws-cli` | `gws` (Google Workspace CLI) |
 | `codex-ask` | `codex` (OpenAI Codex CLI) |
 
