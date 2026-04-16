@@ -1,6 +1,6 @@
 {
   "name": "cortex",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Claude Code skills for developer productivity, research, communication, and workflow automation",
   "owner": {
     "name": "Ali Irani",
@@ -10,7 +10,7 @@
     {
       "name": "cortex",
       "description": "Claude Code skills for developer productivity, research, communication, and workflow automation",
-      "version": "0.2.1",
+      "version": "0.2.2",
       "source": "./plugins/cortex",
       "category": "development"
     }
