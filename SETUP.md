@@ -20,10 +20,10 @@ gh auth login
 
 ### clickup-cli
 
-Requires the ClickUp CLI:
+Requires the ClickUp CLI ([source](https://github.com/triptechtravel/clickup-cli)):
 
 ```bash
-npm install -g clickup-cli
+brew install triptechtravel/tap/clickup
 ```
 
 Authenticate: `clickup auth login`

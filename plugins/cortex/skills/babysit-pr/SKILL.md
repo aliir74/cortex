@@ -13,6 +13,10 @@ Monitor a GitHub PR on a recurring loop. Automatically fix failed CI checks, add
 
 This skill is designed to run inside a `/loop`. Each invocation performs one check cycle and exits. The loop handles recurring execution.
 
+## Prerequisites
+
+Requires the `gh` CLI. If it's not installed, point the user to `SETUP.md` at the plugin root (section: **babysit-pr**) and stop until it's available.
+
 ## User Preferences
 
 Load preferences at the start of every run:

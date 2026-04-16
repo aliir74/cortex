@@ -7,6 +7,10 @@ argument-hint: <task-id or search query>
 
 # ClickUp with clickup CLI
 
+## Prerequisites
+
+Requires the `clickup` CLI. If it's not installed, point the user to `SETUP.md` at the plugin root (section: **clickup-cli**) and stop until it's available.
+
 ## User Preferences
 
 Load preferences at the start of every run:

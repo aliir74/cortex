@@ -6,6 +6,10 @@ model: sonnet
 
 # Google Workspace with gws CLI
 
+## Prerequisites
+
+Requires the `gws` CLI. If it's not installed, point the user to `SETUP.md` at the plugin root (section: **gws-cli**) and stop until it's available.
+
 ## User Preferences
 
 Load preferences at the start of every run:

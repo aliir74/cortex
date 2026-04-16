@@ -9,6 +9,10 @@ argument-hint: [--files file1,file2] [--write] [--model name] <prompt>
 
 Send arbitrary prompts and context to OpenAI Codex CLI (`codex exec`) from Claude Code. No MCP, no git dependency — just direct CLI.
 
+## Prerequisites
+
+Requires the `codex` CLI. If it's not installed, point the user to `SETUP.md` at the plugin root (section: **codex-ask**) and stop until it's available.
+
 ## User Preferences
 
 Load preferences at the start of every run:
@@ -100,7 +104,6 @@ After execution:
 
 ## Error Handling
 
-- If `codex` is not installed: tell user to run `npm install -g @openai/codex`
 - If not authenticated: tell user to run `codex login`
 - If command fails: show stderr output
 - Timeout: 5 minutes max (`--timeout 300000` on the Bash call)
