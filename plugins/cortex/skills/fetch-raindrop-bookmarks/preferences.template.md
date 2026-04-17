@@ -42,3 +42,68 @@ them on the next run.
 Accepted values: true, false. Default: false.
 -->
 delete_after_save:
+
+## curate_dir
+<!--
+Optional absolute path for a "curate" bucket — a second destination for
+bookmarks you want to star/keep as interesting finds rather than just file
+to an inbox. When set, the skill shows an extra triage option ("curate")
+alongside save/skip/open. Curated items are written to this directory with
+`starred: true` in frontmatter plus a short `why` recall hook you provide
+(or that's inferred from title/excerpt when `curate_auto_why: true` is set).
+
+Leave empty to keep the default 3-option triage (save/skip/open) — no
+curate bucket.
+
+Example: /Users/you/notes/Knowledge/Curated/
+-->
+curate_dir:
+
+## curate_auto_why
+<!--
+When true and `curate_dir` is set, the skill auto-generates the `why`
+recall hook from the bookmark's title/excerpt instead of prompting for it
+per-item (faster, but less personal). When false (default), the skill asks
+you "what made this interesting?" before saving each curated item.
+Accepted values: true, false. Default: false.
+-->
+curate_auto_why:
+
+## extract_full_content
+<!--
+When true, the skill automatically extracts the full article body for
+saved and curated items (not just the excerpt) and appends it under a
+`## Content` heading in the saved markdown file.
+
+Extraction strategy (first available wins):
+1. `trafilatura` CLI if on PATH (best quality, requires `pipx install trafilatura`
+   or `uv tool install trafilatura`).
+2. Otherwise, WebFetch with a "extract the article body as markdown" prompt.
+3. If both fail (paywall, JS-only render, network error), save just the
+   excerpt and emit a one-line warning — never block the save.
+
+When false (default), only the excerpt is saved; the user can still say
+"save with full content" per-item to trigger WebFetch extraction.
+Accepted values: true, false. Default: false.
+-->
+extract_full_content:
+
+## extra_frontmatter
+<!--
+Optional YAML block merged into the frontmatter of every saved/curated
+markdown file. Lets you extend the default schema (title, url, date, tags,
+raindrop_id) without forking this skill — useful if you have a downstream
+tool (inbox triage, dashboard, etc.) that expects specific keys.
+
+Provide a valid YAML mapping. Keys in `extra_frontmatter` are MERGED into
+the default frontmatter; if a key here conflicts with a default key, the
+default wins (the skill won't let you overwrite `url` or `raindrop_id`).
+
+Leave empty to use just the default frontmatter.
+
+Example (for Obsidian-style inbox triage):
+  interest: null
+  overflow: false
+  triaged_at: null
+-->
+extra_frontmatter:
