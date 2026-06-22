@@ -46,6 +46,7 @@ These skills activate automatically when Claude detects you're working in a rele
 | `fetch-twitter-bookmarks` | Fetching and triaging Twitter/X bookmarks |
 | `glab-cli` | Running GitLab operations — MRs, pipelines, issues, CI logs |
 | `gws-cli` | Interacting with Google Workspace (Gmail, Calendar, Drive, Sheets) |
+| `how-to-html` | Generating or substantially editing an HTML file — plans, reports, dashboards, custom-editor UIs, slides. Ships a diagram geometry verifier |
 | `python-project-setup` | Setting up new Python projects (uv + ruff + pyright + pytest) |
 | `slack-cli` | Interacting with Slack — reading, searching, sending, reactions |
 | `snow-cli` | Running Snowflake operations — SQL queries, schema inspection, stages, Cortex |
@@ -78,6 +79,7 @@ Some skills require external CLI tools. See [SETUP.md](SETUP.md) for installatio
 | `commit-push-pr` | `gh` and/or `glab` (matches the remote) |
 | `convert-date` | `python3` with `jdatetime` |
 | `fetch-raindrop-bookmarks` | Raindrop.io API token |
+| `how-to-html` | `python3` (stdlib only, for the bundled diagram verifier) |
 | `fetch-twitter-bookmarks` | `bird` (Twitter/X CLI); optional `yt-dlp` for media |
 | `glab-cli` | `glab` (GitLab CLI) |
 | `gws-cli` | `gws` (Google Workspace CLI) |
