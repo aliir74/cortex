@@ -50,8 +50,12 @@ These skills activate automatically when Claude detects you're working in a rele
 | `gemini-cli` | Asking Google Gemini, second opinions, managing Gemini CLI extensions/MCP servers |
 | `glab-cli` | Running GitLab operations — MRs, pipelines, issues, CI logs |
 | `gws-cli` | Interacting with Google Workspace (Gmail, Calendar, Drive, Sheets) |
+<<<<<<< HEAD
 | `imsg-cli` | Reading and sending iMessage/SMS on a Mac — chats, history, search |
 | `ntn-cli` | Notion via the official `ntn` CLI — pages as Markdown, data sources, raw API, Workers |
+=======
+| `how-to-html` | Generating or substantially editing an HTML file — plans, reports, dashboards, custom-editor UIs, slides. Ships a diagram geometry verifier, a content density lint, and collapse-layer / report-nav installers |
+>>>>>>> origin/main
 | `python-project-setup` | Setting up new Python projects (uv + ruff + pyright + pytest) |
 | `signal-cli` | Interacting with Signal — receiving, contacts, groups, sending messages |
 | `slack-cli` | Interacting with Slack — reading, searching, sending, reactions |
@@ -113,6 +117,7 @@ Some skills require external CLI tools. See [SETUP.md](SETUP.md) for installatio
 | `elevenlabs-voice` | `curl`, `jq`, `python3`, ElevenLabs API key |
 | `exa-cli` | `uv`, Exa API key |
 | `fetch-raindrop-bookmarks` | Raindrop.io API token |
+| `how-to-html` | `python3` 3.9+ (stdlib only, for the bundled verifier, density lint and installers) |
 | `fetch-twitter-bookmarks` | `bird` (Twitter/X CLI); optional `yt-dlp` for media |
 | `figma-cli` | `python3`, Figma personal access token |
 | `gemini-cli` | `gemini` (Google Gemini CLI), `GEMINI_API_KEY` |
