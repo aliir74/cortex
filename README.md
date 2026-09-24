@@ -29,6 +29,7 @@ Invoke skills with `/cortex:<skill-name>`.
 | `babysit-pr` | Monitor a PR — auto-fix CI failures, address review feedback, track deploys | `/loop 5m /cortex:babysit-pr #123` |
 | `codex-ask` | Get a second opinion from OpenAI Codex CLI | `/cortex:codex-ask Is this approach correct?` |
 | `commit-push-pr` | Stage, commit, push, and open a PR/MR in one flow (auto-detects GitHub vs GitLab) | `/cortex:commit-push-pr` |
+| `helpers` | Shared stdlib-only scripts (adherence probes, corpus measurement, skill audit, safe description edits) used by other skills; not a workflow on its own | `python3 <plugin>/skills/helpers/<script> --help` |
 | `name-session` | Suggest a structured `[context] goal` session name and copy the `/rename` command | `/cortex:name-session` |
 | `new-session` | Write a task or continuation brief and launch a new background Claude Code session on it in another folder | `/cortex:new-session ~/code/other-repo` |
 | `session-handoff` | Generate structured handoff document for another agent/engineer | `/cortex:session-handoff` |
@@ -42,6 +43,7 @@ These skills activate automatically when Claude detects you're working in a rele
 | `bird-cli` | Interacting with Twitter/X — reading, searching, posting, replies, bookmarks |
 | `catch-up` | Re-briefing you on the current (resumed or long) session — "catch me up", "where were we" |
 | `clickup-cli` | Running ClickUp operations — tasks, comments, search, sprints, time tracking |
+| `compare-skillsets` | Weighing an external skillset or plugin against your installed skills |
 | `convert-date` | Converting between Shamsi/Jalali and Gregorian calendars |
 | `create-permission-hook` | Creating permission hooks for CLI tools |
 | `create-plan` | Writing a structured implementation plan to disk as interactive HTML — "create plan", "plan this" |
@@ -57,11 +59,17 @@ These skills activate automatically when Claude detects you're working in a rele
 | `glab-cli` | Running GitLab operations — MRs, pipelines, issues, CI logs |
 | `gws-cli` | Interacting with Google Workspace (Gmail, Calendar, Drive, Sheets) |
 | `how-to-html` | Generating or substantially editing an HTML file — plans, reports, dashboards, custom-editor UIs, slides. Ships a diagram geometry verifier, a content density lint, and collapse-layer / report-nav installers |
+| `integrate-cli` | Onboarding a new CLI end-to-end — research, install, auth, generate a `<tool>-cli` skill and permission hook |
+| `learn-from` | Turning mistakes and corrections in the current conversation into edits to CLAUDE.md, memory, or skill files |
 | `python-project-setup` | Setting up new Python projects (uv + ruff + pyright + pytest) |
 | `slack-cli` | Interacting with Slack — reading, searching, sending, reactions |
 | `snow-cli` | Running Snowflake operations — SQL queries, schema inspection, stages, Cortex |
 | `tgcli` | Interacting with Telegram — reading chats, sending messages, searching |
 | `understand-session` | Teaching and quizzing you on a session's work or a PR until you can explain it |
+| `update-cli` | Upgrading an installed CLI and syncing its `<tool>-cli` skill and permission hook with new/removed commands |
+| `update-permissions` | Adding, removing, or changing Claude Code permission rules and hooks, with consolidation and a security review |
+| `why-you-asked-me` | Diagnosing why Claude prompted for permission on a command that should have been auto-allowed |
+| `writing-skills` | Creating or editing a skill or a CLAUDE.md rule — triggers-only descriptions, form-to-failure, probe-first testing |
 
 ## Shared Hooks
 
@@ -95,6 +103,8 @@ Some skills require external CLI tools. See [SETUP.md](SETUP.md) for installatio
 | `find-session` | `python3` (stdlib only) |
 | `glab-cli` | `glab` (GitLab CLI) |
 | `gws-cli` | `gws` (Google Workspace CLI) |
+| `helpers` | `python3`; `claude` CLI on PATH for `adherence-probe.py` |
+| `integrate-cli` | `jq` (for generated permission hooks) |
 | `new-session` | Claude Code CLI with `--bg` support (or `dispatch_mode: print`) |
 | `python-project-setup` | `uv` |
 | `slack-cli` | `agent-slack` (Slack CLI) |

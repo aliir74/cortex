@@ -196,3 +196,19 @@ Verify: `python3 --version`.
 ### new-session
 
 Uses the Claude Code CLI itself. Background launch needs a version that supports `claude --bg` (check `claude --help`); on older versions set `dispatch_mode: print` in `${CLAUDE_PLUGIN_DATA}/preferences/new-session.md` to get a command to run yourself.
+
+### integrate-cli
+
+Generated permission hooks parse tool input with `jq`:
+
+```bash
+brew install jq
+```
+
+The CLI being integrated is installed by the skill itself, using that tool's own package manager (`brew`, `npm`, `pipx`, `cargo`).
+
+### helpers
+
+The helper scripts are stdlib-only Python 3. `adherence-probe.py` additionally needs the `claude` CLI on `PATH` (it runs `claude -p` for each probe), logged in as usual.
+
+User data for the scripts (your probes and contracts) lives in the plugin data dir, `${CLAUDE_PLUGIN_DATA}`, so it survives plugin updates. The first time you run `adherence-probe.py` or `skill-contracts.py` without that file, the script prints the exact path it expects and the bundled example to copy from (`probes.example.json`, `skill-contracts.example.json`). Copy it there, then replace the example entries with probes and contracts for your own rules. Either script also accepts an explicit path (`--probes` / `--file`).
