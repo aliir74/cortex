@@ -1,0 +1,13 @@
+[
+  {
+    "file": "~/.claude/CLAUDE.md",
+    "pattern": "Never commit directly to `main`",
+    "why": "example: a probe asserts this rule, so the sentence must stay in always-loaded context"
+  },
+  {
+    "file": "~/.claude/skills/my-skill/SKILL.md",
+    "pattern": "^description: Use when",
+    "why": "example: the description must stay triggers-first",
+    "flags": "m"
+  }
+]
