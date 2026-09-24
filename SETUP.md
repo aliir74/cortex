@@ -187,6 +187,59 @@ Requires a Raindrop.io API token:
 
 Requires the `bird` CLI (see the **bird-cli** section above for install + auth). Optional: install `yt-dlp` (`brew install yt-dlp`) if you want the skill to download tweet videos when `download_media=true`.
 
+### summarize-content
+
+Requires the `summarize` CLI (<https://summarize.sh>, MIT):
+
+```bash
+brew install summarize
+summarize --help
+```
+
+It calls an LLM provider for the summary step; configure a provider key as described in its docs.
+
+### make-slides
+
+Requires `git`. On first run the skill clones the MIT-licensed [beautiful-html-templates](https://github.com/zarazhangrui/beautiful-html-templates) library into `${CLAUDE_PLUGIN_DATA}/beautiful-html-templates` (override with `templates_dir` in `${CLAUDE_PLUGIN_DATA}/preferences/make-slides.md`).
+
+### generate-image
+
+Requires Python 3 (stdlib only) plus an API key for at least one provider, exported in your shell profile or a secrets manager:
+
+```bash
+export OPENAI_API_KEY="<key>"   # default provider, https://platform.openai.com/api-keys
+export GEMINI_API_KEY="<key>"   # optional, https://aistudio.google.com/apikey (image models need billing enabled)
+```
+
+`gpt-image-2` additionally requires OpenAI organisation verification; the skill falls back to `gpt-image-1.5` without it.
+
+### md-to-pdf
+
+Requires `pandoc`, Google Chrome or Chromium, and Python 3:
+
+```bash
+brew install pandoc            # macOS
+sudo apt install pandoc chromium   # Debian/Ubuntu
+```
+
+If the browser isn't on `PATH` or at the default macOS location, export `CHROME_PATH=/path/to/chrome`.
+
+### cut-clip
+
+Requires `yt-dlp`, `ffmpeg` (includes `ffprobe`), `curl`, and Python 3:
+
+```bash
+brew install yt-dlp ffmpeg
+```
+
+Transcription uses ElevenLabs Scribe. Create a key at <https://elevenlabs.io/app/settings/api-keys> and either export it:
+
+```bash
+export ELEVENLABS_API_KEY="<key>"
+```
+
+or save it to `~/.config/elevenlabs/api_key` (`chmod 600`; override the location with `ELEVENLABS_API_KEY_FILE`).
+
 ### find-session
 
 Requires Python 3 (standard library only, no packages). Most macOS and Linux systems ship it; otherwise `brew install python` or your distro's package.
