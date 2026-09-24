@@ -50,8 +50,12 @@ These skills activate automatically when Claude detects you're working in a rele
 | `generate-image` | Generating or editing an image (OpenAI GPT Image or Gemini Nano Banana) |
 | `glab-cli` | Running GitLab operations — MRs, pipelines, issues, CI logs |
 | `gws-cli` | Interacting with Google Workspace (Gmail, Calendar, Drive, Sheets) |
+<<<<<<< HEAD
 | `md-to-pdf` | Converting a markdown file (Obsidian-flavoured supported) to PDF |
 | `post-mortem` | Writing a blameless postmortem / RCA |
+=======
+| `how-to-html` | Generating or substantially editing an HTML file — plans, reports, dashboards, custom-editor UIs, slides. Ships a diagram geometry verifier, a content density lint, and collapse-layer / report-nav installers |
+>>>>>>> origin/main
 | `python-project-setup` | Setting up new Python projects (uv + ruff + pyright + pytest) |
 | `quick-search` | Fast single-fact web lookups: docs, syntax, versions |
 | `refine-english` | Refining text to sound native, writing feedback, pronunciation help |
@@ -90,6 +94,7 @@ Some skills require external CLI tools. See [SETUP.md](SETUP.md) for installatio
 | `cut-clip` | `yt-dlp`, `ffmpeg`, `curl`, ElevenLabs API key |
 | `discuss-comments` | `gh` (GitHub CLI) |
 | `fetch-raindrop-bookmarks` | Raindrop.io API token |
+| `how-to-html` | `python3` 3.9+ (stdlib only, for the bundled verifier, density lint and installers) |
 | `fetch-twitter-bookmarks` | `bird` (Twitter/X CLI); optional `yt-dlp` for media |
 | `generate-image` | `OPENAI_API_KEY` and/or `GEMINI_API_KEY` |
 | `glab-cli` | `glab` (GitLab CLI) |

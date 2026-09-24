@@ -1,0 +1,457 @@
+<!--
+  COLLAPSE LAYER — generic, structure-agnostic drop-in that makes every section and card
+  in a read-mostly HTML artifact collapsible, and collapsed by default.
+
+  WHY. A report that opens fully expanded is a scroll with no shape: on a phone the
+  two-minute version and the appendix look identical, and finding the part you came back
+  for means thumbing past everything you already read. Collapsed-by-default turns the same
+  file into an index you open a section at a time, which is the reading mode these
+  artifacts are actually used in (phone, days later, looking for one thing).
+
+  WHAT IT DOES. For every element matching COLLAPSIBLE that owns a heading, it turns that
+  heading into a disclosure control (chevron, role=button, aria-expanded, 44px target) and
+  wraps everything after it in a body element that is hidden with hidden="until-found", so
+  Ctrl+F / phone find-in-page still matches inside a closed section and auto-opens it.
+  A single "Expand all / Collapse all" control docks into the report-nav rail when one is
+  installed and floats when it is not. Open/closed state persists per artifact in
+  localStorage, so returning to a report you were reading resumes where you left it.
+
+  DEFAULT STATE. COLLAPSE_DEFAULT = "collapsed". Sections marked data-collapse="open"
+  (and the first section when KEEP_FIRST_OPEN is true) start open regardless, which is how
+  a report's orientation line and answer stay visible above the fold. Set COLLAPSE_DEFAULT
+  to "expanded" for an artifact that is genuinely read top-to-bottom in one pass (a slide
+  deck, a one-screen dashboard). It is one constant; do not fork the layer.
+
+  WHAT IT NEVER TOUCHES. Legacy annotation chrome (.cl-*), .claude-response blocks, the
+  report-nav rail, anything marked data-no-collapse, and any element with no heading to
+  hang the control off (there is nothing to click, so collapsing it would hide content
+  behind no affordance).
+
+  PRINT. Everything is forced open in print, so a PDF of the artifact is the whole
+  artifact. Same for a page opened with a #hash targeting a closed section: its ancestors
+  open before the scroll lands.
+
+  HOW TO USE
+  1. Paste the <style> block once inside the page's <style> (or its own <style>).
+  2. Paste the <script> block last (after the content exists in the DOM). There is no
+     markup block: the control is built by the script.
+  3. Tune COLLAPSIBLE to this artifact's own section and card classes.
+
+  Or, preferably, install it rather than hand-copying:
+      python3 "${CLAUDE_PLUGIN_ROOT}/skills/how-to-html/install_collapse_layer.py" <file.html> \
+          --collapsible "section, .card" --default collapsed
+  and let --check / --self-test tell you what is already there.
+
+  NAMESPACE. Every class this layer CREATES is cx- prefixed, and every class it MATCHES is
+  either cx- prefixed or supplied by the host through COLLAPSIBLE. A bare class name here loses to (or fights
+  with) whatever the host artifact happens to define, silently. Do not add an unprefixed
+  class to this file.
+
+  It assumes the design tokens from how-to-html scaffold §1 (--ink, --ink-2, --paper,
+  --rule, --rule-2, --accent, --mono, --sans). Every var() has a literal fallback, so it
+  renders correctly in an artifact that defines none of them.
+-->
+
+<!-- ========================== 1. STYLE ========================== -->
+<style>
+  /* Collision guard: if the host reaches these elements by tag rather than by class, it
+     must not put a box on them.
+     :not([class*="cx-"]) is load-bearing, not decoration. Without it the guard also hits
+     the layer's OWN spans, and it wins on specificity (0,1,1 against a bare .cx-chevron's
+     0,1,0): `border: 0` computes border-right-style:none on every chevron (invisible
+     affordance on every heading) and `margin: 0` kills the count chip's margin-left:auto so
+     it sits glued to the heading text. Nothing errors. */
+  .cx-head > span:not([class*="cx-"]),
+  .cx-bar button > span:not([class*="cx-"]) {
+    border: 0; margin: 0; padding: 0; background: none; box-shadow: none; border-radius: 0;
+  }
+
+  /* The heading, turned into a disclosure control. It keeps the host's own heading
+     styling: this only adds the affordance, the hit area and the chevron. */
+  .cx-head {
+    cursor: pointer;
+    position: relative;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    /* The chevron sits in the flex row, so no padding hack and no overlap with a long
+       heading that wraps to two lines. */
+  }
+  .cx-head:focus-visible {
+    outline: 2px solid var(--accent, #5856D6);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+  .cx-chevron {
+    flex: none;
+    width: 0.44em; height: 0.44em;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    opacity: 0.5;
+    transform: rotate(-45deg);      /* closed: points right */
+    transform-origin: 60% 60%;
+    align-self: center;
+  }
+  .cx-head[aria-expanded="true"] .cx-chevron { transform: rotate(45deg); }  /* open: down */
+  @media (prefers-reduced-motion: no-preference) {
+    .cx-chevron { transition: transform 0.18s ease; }
+  }
+  /* A count of what is hidden, so a closed section still says how much is inside.
+     Suppressed when open: the content is right there. */
+  .cx-hint {
+    flex: none;
+    margin-left: auto;
+    font-family: var(--sans, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--ink-2, #5A5A55);
+    opacity: 0.75;
+  }
+  .cx-head[aria-expanded="true"] .cx-hint { visibility: hidden; }
+
+  /* Phone: the heading row is the tap target, so it has to clear 44px on its own. */
+  @media (max-width: 640px) {
+    .cx-head { min-height: 44px; align-items: center; }
+  }
+
+  /* The body. hidden="until-found" already hides it in browsers that support it; the
+     [hidden] rule is the floor for the ones that do not, where it degrades to a plain
+     hidden section that the toggle still opens. */
+  .cx-body[hidden] { display: none; }
+
+  /* Expand all / Collapse all. Docks into the report-nav rail (scaffold section 8) when
+     one is installed, floats bottom-left when it is not, leaving bottom-right free for a
+     page's own floating action (Copy result); two floating stacks in one corner is how a
+     phone artifact loses its last section behind chrome. */
+  .cx-bar { font-family: var(--sans, system-ui, sans-serif); }
+  .cx-bar.cx-floating {
+    position: fixed; z-index: 56;
+    left: calc(12px + env(safe-area-inset-left, 0px));
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+  .cx-bar button {
+    font: inherit;
+    font-size: 11.5px;
+    padding: 7px 11px;
+    min-height: 34px;
+    border-radius: 8px;
+    border: 1px solid var(--rule, rgba(10,10,10,0.10));
+    background: var(--paper, #FFF);
+    color: var(--ink-2, #5A5A55);
+    cursor: pointer;
+  }
+  .cx-bar button:hover { color: var(--ink, #0A0A0A); }
+  .cx-bar button:focus-visible { outline: 2px solid var(--accent, #5856D6); outline-offset: 1px; }
+  .cx-bar.cx-floating button { box-shadow: 0 8px 24px -12px rgba(10,10,10,0.4); }
+  #rnav-slot .cx-bar button { width: 100%; text-align: left; }
+  @media (max-width: 640px) {
+    .cx-bar button { min-height: 44px; font-size: 13px; padding: 10px 14px; }
+  }
+
+  /* A print of the artifact is the whole artifact, never the index of it. */
+  @media print {
+    .cx-body[hidden] { display: block !important; }
+    .cx-chevron, .cx-hint, .cx-bar { display: none !important; }
+    .cx-head { cursor: auto; }
+  }
+</style>
+
+<!-- ========================== 2. SCRIPT (place last) ========================== -->
+<script>
+(function () {
+  "use strict";
+
+  /* ---- The two things to tune per artifact ---- */
+
+  // Which blocks collapse. Keep these to elements that OWN a heading; one without a
+  // heading has nothing to hang the control off and is skipped rather than hidden.
+  var COLLAPSIBLE = "section, .card, .finding, .phase, article";
+
+  // "collapsed" (default) or "expanded". See the header comment before changing it.
+  var COLLAPSE_DEFAULT = "collapsed";
+
+  // Whether the first collapsible in the document starts open regardless. For a report
+  // that is the orientation line and the answer, which must not be behind a click.
+  var KEEP_FIRST_OPEN = true;
+
+  /* ---- Nothing below here is per-artifact ---- */
+
+  var HEADING = "h1, h2, h3, h4, h5, h6, .cx-title, header";
+  // Never collapse the annotation chrome, the answers, or the nav.
+  var EXCLUDE = ".cl-responses, .cl-inline-comment, .cl-actionbar, .cl-notes-box," +
+                " .cl-copy-fallback, .claude-response, .cx-bar, #rnav, #rnav-slot," +
+                " [data-no-collapse]";
+
+  var KEY = "cx-open:" + (location.pathname || "artifact");
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { state = {}; }
+  function persist() {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* private window */ }
+  }
+
+  var groups = [];
+  var syncTimer = null;
+  // setOpen runs during the first scan, before the bar exists, so this defers and no-ops
+  // until there is a button to label. It also replaces document-level click delegation,
+  // which the header's stopPropagation would never reach.
+  function syncSoon() {
+    if (syncTimer) return;
+    syncTimer = setTimeout(function () { syncTimer = null; if (typeof syncBtn === "function") syncBtn(); }, 0);
+  }
+
+  function headingOf(el) {
+    // Direct children only: a heading nested inside a sub-card belongs to that card, and
+    // hoisting it would collapse the wrong subtree.
+    for (var i = 0; i < el.children.length; i++) {
+      var c = el.children[i];
+      if (c.matches(HEADING) && !c.closest(EXCLUDE)) return c;
+    }
+    // Fallback: the FIRST child element wrapping a heading is the header row. Card and
+    // column headers are routinely a <div class="col-header"><h2>…</h2><span>count</span></div>
+    // rather than a bare <h2>, and requiring a bare heading silently skipped every one of
+    // them on card boards.
+    // First child only, so a heading further down the body is not hoisted into a header.
+    var f = el.firstElementChild;
+    if (f && !f.matches(EXCLUDE) && !f.closest(EXCLUDE) && f.querySelector("h1,h2,h3,h4,h5,h6")) return f;
+    return null;
+  }
+
+  function labelFor(el, head) {
+    var t = (head.textContent || "").trim().replace(/\s+/g, " ");
+    return t.slice(0, 80) || (el.id || "section");
+  }
+
+  function hiddenCount(body) {
+    // "how much is inside", in the unit the reader cares about, so a closed section is
+    // not a mystery. Cards first, then rows, then paragraphs — whichever it actually has.
+    var n = body.querySelectorAll(".card, .finding, li").length;
+    if (n) return n + " item" + (n === 1 ? "" : "s");
+    n = body.querySelectorAll("tr").length;
+    if (n > 1) return (n - 1) + " row" + (n === 2 ? "" : "s");
+    n = body.querySelectorAll("p").length;
+    return n ? n + " para" + (n === 1 ? "" : "s") : "";
+  }
+
+  function setOpen(g, open, remember) {
+    g.head.setAttribute("aria-expanded", open ? "true" : "false");
+    syncSoon();
+    if (open) {
+      g.body.removeAttribute("hidden");
+    } else {
+      // until-found keeps find-in-page working: Chrome matches inside the hidden body and
+      // fires beforematch, which we listen for below to open the section around the hit.
+      // Browsers without support fall back to the [hidden] display:none rule.
+      try { g.body.hidden = "until-found"; } catch (e) { g.body.hidden = true; }
+    }
+    if (remember !== false) { state[g.key] = open ? 1 : 0; persist(); }
+  }
+
+  function build(el) {
+    if (el.closest(EXCLUDE)) return;
+    if (el.dataset.collapse === "off") return;
+    var head = headingOf(el);
+    if (!head) return;                       // nothing to click: leave it alone
+    if (head.classList.contains("cx-head")) return;
+
+    // Everything after the heading becomes the body. Wrapping (rather than toggling each
+    // sibling) keeps one element to hide, which is what hidden="until-found" needs.
+    var body = document.createElement("div");
+    body.className = "cx-body";
+    var n;
+    while ((n = head.nextSibling)) body.appendChild(n);
+    if (!body.childNodes.length) return;     // heading-only block: nothing to collapse
+    el.appendChild(body);
+
+    head.classList.add("cx-head");
+    head.setAttribute("role", "button");
+    head.setAttribute("tabindex", "0");
+    var chev = document.createElement("span");
+    chev.className = "cx-chevron";
+    chev.setAttribute("aria-hidden", "true");
+    head.insertBefore(chev, head.firstChild);
+    var hint = hiddenCount(body);
+    if (hint) {
+      var h = document.createElement("span");
+      h.className = "cx-hint";
+      h.textContent = hint;
+      head.appendChild(h);
+    }
+
+    var key = labelFor(el, head);
+    if (!el.id) el.id = "cx-" + key.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    if (!body.id) body.id = el.id + "-body";
+    head.setAttribute("aria-controls", body.id);
+
+    var g = { el: el, head: head, body: body, key: key };
+    groups.push(g);
+
+    // The header is a control, so its events stop here. A host that treats the whole block
+    // as a drop target sees `closest(".card") === null` for a header tap and would read the
+    // toggle as a drop: a board that binds pointerup on .column would otherwise file a card
+    // on a phone tap on a column header.
+    function swallow(ev) {
+      if (ev.target.closest("a, button, input, select, textarea")) return false;
+      ev.stopPropagation();
+      return true;
+    }
+    head.addEventListener("pointerdown", swallow);
+    head.addEventListener("pointerup", swallow);
+    head.addEventListener("click", function (ev) {
+      // A link or button inside a heading keeps its own behaviour.
+      if (!swallow(ev)) return;
+      setOpen(g, g.head.getAttribute("aria-expanded") !== "true");
+    });
+    head.addEventListener("keydown", function (ev) {
+      if (ev.key === "Enter" || ev.key === " " || ev.key === "Spacebar") {
+        ev.preventDefault();
+        ev.stopPropagation();
+        setOpen(g, g.head.getAttribute("aria-expanded") !== "true");
+      }
+    });
+    // Find-in-page hit inside a closed body: open it (and its ancestors) for real, so the
+    // reader lands on visible text rather than on a section that snaps shut on the next key.
+    body.addEventListener("beforematch", function () { openWithAncestors(g.el); });
+    return g;
+  }
+
+  function groupFor(el) {
+    for (var i = 0; i < groups.length; i++) if (groups[i].el === el) return groups[i];
+    return null;
+  }
+
+  function openWithAncestors(el) {
+    var node = el;
+    while (node && node !== document.body) {
+      var g = groupFor(node);
+      if (g) setOpen(g, true);
+      node = node.parentElement;
+    }
+  }
+
+  function scan() {
+    var all = Array.prototype.slice.call(document.querySelectorAll(COLLAPSIBLE));
+    // Deepest first, so a nested card is wrapped before its parent swallows it into a body.
+    all.sort(function (a, b) { return b.compareDocumentPosition(a) & 16 ? -1 : 1; });
+    var before = groups.length;
+    all.forEach(build);
+    if (groups.length === before) return false;
+
+    // Document order for the first-open rule and the bar's all/none logic.
+    groups.sort(function (a, b) {
+      return (a.el.compareDocumentPosition(b.el) & 4) ? -1 : 1;
+    });
+    groups.forEach(function (g, i) {
+      if (g.inited) return;                  // never re-close what the reader has opened
+      g.inited = true;
+      var open;
+      if (Object.prototype.hasOwnProperty.call(state, g.key)) open = !!state[g.key];
+      else if (g.el.dataset.collapse === "open") open = true;
+      else if (KEEP_FIRST_OPEN && i === 0) open = true;
+      else open = COLLAPSE_DEFAULT === "expanded";
+      setOpen(g, open, false);
+    });
+    return true;
+  }
+
+  scan();
+  if (!groups.length && !document.body) return;
+
+  // Most of these artifacts render their content from JS after this script runs (plans,
+  // reports and card boards often build their sections from a data blob), so a one-shot scan at parse time finds nothing and the page ships with no
+  // controls at all. Re-scan on new
+  // subtrees, with the observer paused around our own DOM writes so it cannot feed itself.
+  var mo = null, timer = null;
+  function rescan() {
+    timer = null;
+    if (mo) mo.disconnect();
+    var added = scan();
+    if (added) { syncBtn(); dock(); }
+    if (mo) mo.observe(document.body, { childList: true, subtree: true });
+  }
+  if (window.MutationObserver && document.body) {
+    mo = new MutationObserver(function (recs) {
+      for (var i = 0; i < recs.length; i++) {
+        for (var j = 0; j < recs[i].addedNodes.length; j++) {
+          var n = recs[i].addedNodes[j];
+          if (n.nodeType !== 1) continue;
+          // Ignore our own chrome, or the observer loops on itself.
+          if (n.className && String(n.className).indexOf("cx-") === 0) continue;
+          if (n.closest && n.closest(EXCLUDE)) continue;
+          if (!timer) timer = setTimeout(rescan, 120);
+          return;
+        }
+      }
+    });
+    mo.observe(document.body, { childList: true, subtree: true });
+  }
+  // The explicit hook, for a template that would rather call it than wait for the observer.
+  window.cxCollapseRefresh = rescan;
+
+  // ---- Expand all / Collapse all ----
+  var bar = document.createElement("div");
+  bar.className = "cx-bar";
+  var btn = document.createElement("button");
+  btn.type = "button";
+  function syncBtn() {
+    // Hidden until there is something to expand: the content may not exist yet (see the
+    // rescan above), and a control that acts on nothing is worse than no control.
+    bar.hidden = groups.length === 0;
+    var openCount = 0;
+    groups.forEach(function (g) { if (g.head.getAttribute("aria-expanded") === "true") openCount++; });
+    var allOpen = openCount === groups.length;
+    btn.textContent = allOpen ? "Collapse all" : "Expand all (" + groups.length + ")";
+    btn.dataset.action = allOpen ? "collapse" : "expand";
+  }
+  btn.addEventListener("click", function () {
+    var expand = btn.dataset.action === "expand";
+    groups.forEach(function (g) { setOpen(g, expand); });
+    syncBtn();
+  });
+  bar.appendChild(btn);
+  syncBtn();
+
+  // Dock into the report-nav rail when it is installed; float when it is not. Retried on
+  // load because install order is not guaranteed — same reason as the responses index.
+  function dock() {
+    var slot = document.getElementById("rnav-slot");
+    if (slot && bar.parentNode !== slot) {
+      bar.classList.remove("cx-floating");
+      slot.appendChild(bar);
+    } else if (!slot && !bar.parentNode) {
+      bar.classList.add("cx-floating");
+      document.body.appendChild(bar);
+    }
+  }
+  dock();
+  window.addEventListener("load", dock);
+
+  // A #hash into a closed section must open it before the browser scrolls, or the reader
+  // lands on a heading with nothing under it. Covers both initial load and later jumps
+  // (the responses index links this way).
+  function revealHash() {
+    if (!location.hash) return;
+    var t = null;
+    try { t = document.querySelector(location.hash); } catch (e) { return; }
+    if (!t) return;
+    openWithAncestors(t);
+    syncBtn();
+    t.scrollIntoView({ block: "start" });
+  }
+  revealHash();
+  window.addEventListener("hashchange", revealHash);
+  window.addEventListener("load", revealHash);
+
+  // Printing must not print an index. Open everything for the print, restore after.
+  var printState = null;
+  window.addEventListener("beforeprint", function () {
+    printState = groups.map(function (g) { return g.head.getAttribute("aria-expanded") === "true"; });
+    groups.forEach(function (g) { setOpen(g, true, false); });
+  });
+  window.addEventListener("afterprint", function () {
+    if (!printState) return;
+    groups.forEach(function (g, i) { setOpen(g, printState[i], false); });
+    printState = null;
+    syncBtn();
+  });
+})();
+</script>

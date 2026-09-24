@@ -1,0 +1,338 @@
+<!--
+  REPORT NAV - generic, structure-agnostic drop-in for report-style HTML.
+
+  Solves the "where am I" half of report disorientation. The narrative spine
+  (references/narrative.md) fixes what a report says and in what order; this fixes the
+  reader's ability to locate themselves inside it. A long report without it is a scroll
+  with no landmarks: you cannot tell how much is left, cannot jump to the part you came
+  back for, and cannot resume where you stopped.
+
+  What it renders:
+
+    - A sticky contents rail listing every heading under SECTION_ROOT, numbered
+      automatically at runtime so adding a section never desynchronises the numbering.
+    - Scroll-spy marking the current section, via IntersectionObserver rather than a
+      scroll handler recomputing offsets (which janks on long reports).
+    - A thin reading-progress indicator, answering "how much is left".
+    - A phone sheet under 640px, because a fixed side rail is unusable at that width.
+
+  It degrades to nothing on a report with fewer than MIN_SECTIONS headings rather than
+  rendering an empty rail.
+
+  HOW TO USE - do not hand-copy this, run the installer:
+
+      python3 "${CLAUDE_PLUGIN_ROOT}/skills/how-to-html/install_report_nav.py" report.html \
+          --section-root ".container" --heading "h2" \
+          --alias paper=--card --alias rule=--line --alias accent=--indigo
+
+  Hand-copying is how artifacts drift and quietly lose whichever capability was added
+  last. The installer splices the three blocks below, rewrites the two per-artifact
+  constants, refuses to double-install, and its --check audits the narrative spine.
+
+  It assumes the design tokens from how-to-html scaffold section 1 (--ink, --ink-2,
+  --paper, --rule, --rule-2, --accent, --mono, --sans). Every var() has a literal
+  fallback so it still works if a token is missing. Self-contained: no external deps.
+
+  It composes with the collapse layer (scaffold section 9); install that one first.
+-->
+
+<!-- ========================== 1. STYLE ========================== -->
+<style>
+  /* Reading progress. Fixed to the viewport top, above everything. */
+  .rnav-progress {
+    position: fixed; top: 0; left: 0; height: 3px; width: 0%;
+    background: var(--accent, #5856D6);
+    z-index: 60; pointer-events: none;
+  }
+
+  /* The rail itself. Docked left on desktop, a sheet on phone. */
+  .rnav {
+    /* left is set at runtime from the section root's real position: a CSS guess at the
+       container width (50vw minus a constant) overlaps the text on any artifact whose
+       container is not the width that guess assumed. */
+    position: fixed; top: 50%; left: 12px;
+    transform: translateY(-50%);
+    z-index: 55;
+    max-height: 70vh; overflow-y: auto;
+    padding: 10px 12px;
+    border: 1px solid var(--rule, rgba(10,10,10,0.10));
+    border-radius: 10px;
+    /* Translucent, not opaque. The rail is fixed over the page and on a narrow gutter it
+       sits on top of the prose; an opaque panel blanks whatever it covers, which is the
+       one thing a "where am I" aid must not do. Blur keeps the list legible over text.
+       A heavy blur is what erases the content behind it, so the opacity number alone is not what makes
+       it opaque; 40% with blur(6px) leaves the text underneath legible. */
+    background: color-mix(in srgb, var(--paper, #FFF) 40%, transparent);
+    -webkit-backdrop-filter: blur(6px) saturate(1.3);
+    backdrop-filter: blur(6px) saturate(1.3);
+    box-shadow: 0 1px 0 rgba(0,0,0,0.04), 0 8px 24px -12px rgba(10,10,10,0.14);
+    font-family: var(--sans, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+    width: 208px;
+  }
+  .rnav-title {
+    font-family: var(--sans, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+    font-size: 12px; font-weight: 600;
+    color: var(--ink-2, #5A5A55);
+    margin: 0 0 8px; padding: 0 4px;
+  }
+  .rnav ol { list-style: none; margin: 0; padding: 0; }
+  .rnav li { margin: 0; }
+  .rnav a {
+    display: flex; gap: 8px; align-items: baseline;
+    padding: 6px 4px; border-radius: 6px;
+    font-size: 12.5px; line-height: 1.35;
+    color: var(--ink-2, #5A5A55); text-decoration: none;
+    border-left: 2px solid transparent;
+  }
+  .rnav a:hover { background: color-mix(in srgb, var(--ink, #0A0A0A) 5%, transparent); }
+  .rnav a .rnav-n {
+    font-variant-numeric: tabular-nums;
+    font-size: 10px; color: var(--ink-2, #5A5A55); opacity: 0.7;
+    min-width: 1.1em; flex: none;
+  }
+  .rnav a[aria-current="true"] {
+    color: var(--ink, #0A0A0A); font-weight: 600;
+    border-left-color: var(--accent, #5856D6);
+    background: color-mix(in srgb, var(--accent, #5856D6) 8%, transparent);
+  }
+  .rnav a[aria-current="true"] .rnav-n { opacity: 1; color: var(--accent, #5856D6); }
+  .rnav a:focus-visible { outline: 2px solid var(--accent, #5856D6); outline-offset: 1px; }
+
+  /* Optional slot another layer can dock an index into. */
+  .rnav-slot:not(:empty) {
+    margin-top: 10px; padding-top: 10px;
+    border-top: 1px solid var(--rule, rgba(10,10,10,0.10));
+  }
+
+  /* Phone toggle. Hidden on desktop, the only entry point under 640px. */
+  .rnav-toggle {
+    display: none;
+    position: fixed; z-index: 56;
+    left: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    min-width: 44px; min-height: 44px;
+    padding: 0 14px;
+    align-items: center; justify-content: center; gap: 7px;
+    border: 1px solid var(--rule-2, rgba(10,10,10,0.18));
+    border-radius: var(--radius, 10px);
+    background: color-mix(in srgb, var(--paper, #FFF) 78%, transparent);
+    -webkit-backdrop-filter: blur(16px) saturate(1.6);
+    backdrop-filter: blur(16px) saturate(1.6);
+    color: var(--ink, #0A0A0A);
+    font-family: var(--sans, system-ui, sans-serif); font-size: 13px; font-weight: 500;
+    box-shadow: 0 6px 18px -8px rgba(10,10,10,0.4);
+    cursor: pointer;
+  }
+  .rnav-toggle .rnav-pos {
+    font-variant-numeric: tabular-nums; font-size: 12px;
+    color: var(--ink-2, #5A5A55);
+  }
+  .rnav-backdrop {
+    display: none; position: fixed; inset: 0; z-index: 54;
+    background: rgba(10,10,10,0.34);
+  }
+  .rnav-backdrop.open { display: block; }
+
+  @media (max-width: 640px) {
+    .rnav-toggle { display: inline-flex; }
+    .rnav {
+      top: auto; bottom: 0; left: 0; right: 0;
+      width: auto; max-height: 62vh;
+      transform: translateY(101%);
+      border-radius: 14px 14px 0 0;
+      border-left: none; border-right: none; border-bottom: none;
+      /* Clear the toggle, which stays tappable above the open sheet (z-index 56 over 55).
+         Without this the last list item sits underneath it. Toggle is 44px tall at a 12px
+         offset, so 68px plus the safe area is the floor. */
+      padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+    }
+    .rnav.open { transform: translateY(0); }
+    .rnav a { padding: 11px 6px; font-size: 14px; min-height: 44px; align-items: center; }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .rnav { transition: transform 0.18s ease; }
+    .rnav a { transition: background 0.12s ease, color 0.12s ease; }
+    .rnav-progress { transition: width 0.1s linear; }
+    html { scroll-behavior: smooth; }
+  }
+
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .rnav, .rnav-toggle { background: color-mix(in srgb, var(--paper, #FFF) 82%, transparent); }
+  }
+
+  @media print { .rnav, .rnav-toggle, .rnav-progress, .rnav-backdrop { display: none !important; } }
+</style>
+
+<!-- ========================== 2. MARKUP ========================== -->
+<div class="rnav-progress" id="rnav-progress" role="presentation"></div>
+<div class="rnav-backdrop" id="rnav-backdrop"></div>
+<button type="button" class="rnav-toggle" id="rnav-toggle"
+        aria-expanded="false" aria-controls="rnav">
+  Contents <span class="rnav-pos" id="rnav-pos"></span>
+</button>
+<nav class="rnav" id="rnav" aria-label="Report contents" hidden>
+  <p class="rnav-title">Contents</p>
+  <ol id="rnav-list"></ol>
+  <div class="rnav-slot" id="rnav-slot"></div>
+</nav>
+
+<!-- ========================== 3. SCRIPT ========================== -->
+<script>
+(function () {
+  "use strict";
+
+  // Where to look for sections, and what counts as one. Rewritten by the installer.
+  const SECTION_ROOT = ".container";
+  const HEADING = "h2";
+
+  // Below this many sections a rail is noise, so render nothing at all.
+  const MIN_SECTIONS = 3;
+
+  const root = document.querySelector(SECTION_ROOT) || document.body;
+  const headings = Array.from(root.querySelectorAll(HEADING))
+    .filter(h => !h.closest(".rnav"));
+
+  const nav = document.getElementById("rnav");
+  const list = document.getElementById("rnav-list");
+  const toggle = document.getElementById("rnav-toggle");
+  const backdrop = document.getElementById("rnav-backdrop");
+  const bar = document.getElementById("rnav-progress");
+  const pos = document.getElementById("rnav-pos");
+
+  // Degrade to nothing rather than rendering an empty rail.
+  if (headings.length < MIN_SECTIONS) {
+    [nav, toggle, backdrop, bar].forEach(el => { if (el) el.remove(); });
+    return;
+  }
+  nav.hidden = false;
+
+  const slug = s => s.toLowerCase().replace(/[^\w]+/g, "-").replace(/^-|-$/g, "").slice(0, 60);
+  const links = [];
+
+  // Heading text minus any UI another layer injected into it (annotate buttons, the collapse
+  // layer's chevron and count), or a raw textContent read yields "Section title+" on every
+  // rail item. Cloning and stripping is order-independent, so it does not
+  // matter which layer's script runs first.
+  function headingText(h) {
+    const c = h.cloneNode(true);
+    c.querySelectorAll("button, .cl-annotate-btn, .annotate-btn, .cx-hint, .cx-chevron," +
+                       " .rnav, script, style")
+     .forEach(n => n.remove());   // annotate-button classes from older layers
+    // .cx-hint / .cx-chevron are the collapse layer's item count and caret, injected INTO
+    // the heading. Unstripped they concatenate onto the label: "Sources20 items".
+    // A kicker/eyebrow span is a separate line in the heading's own layout, so its text
+    // butts straight against the title in a flat textContent read: "Answer 1the total
+    // is $255". Separate them before flattening.
+    c.querySelectorAll(".kicker, .eyebrow, .orient, .label")
+     .forEach(k => k.parentNode && k.parentNode.insertBefore(document.createTextNode(" "), k.nextSibling));
+    return (c.textContent || "").replace(/\s+/g, " ").trim();
+  }
+
+  headings.forEach((h, i) => {
+    const text = headingText(h);
+    if (!h.id) h.id = "sec-" + (i + 1) + "-" + (slug(text) || "section");
+    const li = document.createElement("li");
+    const a = document.createElement("a");
+    a.href = "#" + h.id;
+    const n = document.createElement("span");
+    n.className = "rnav-n";
+    n.textContent = String(i + 1);
+    const label = document.createElement("span");
+    label.textContent = text;
+    a.append(n, label);
+    a.addEventListener("click", () => closeSheet());
+    li.appendChild(a);
+    list.appendChild(li);
+    links.push(a);
+  });
+
+  function setCurrent(i) {
+    links.forEach((a, k) => {
+      if (k === i) a.setAttribute("aria-current", "true");
+      else a.removeAttribute("aria-current");
+    });
+    if (pos) pos.textContent = (i + 1) + "/" + links.length;
+  }
+  setCurrent(0);
+
+  // Scroll-spy plus reading progress, recomputed together and throttled to one frame.
+  //
+  // The IntersectionObserver alone is NOT enough: it only fires when a heading crosses a
+  // threshold, so a jump (anchor link, restored scroll position, programmatic scrollTop)
+  // can land mid-document without firing anything, leaving the rail marking a stale
+  // section (a jump to 99% scroll can leave it on section 3 of 4). So the
+  // observer and the scroll handler both feed one recompute, and the rAF gate keeps the
+  // cost at one pass per frame regardless of how many events arrive.
+  let queued = false;
+  function recompute() {
+    queued = false;
+    const doc = document.documentElement;
+
+    let best = -1, bestTop = -Infinity;
+    headings.forEach((h, i) => {
+      const top = h.getBoundingClientRect().top;
+      if (top <= 120 && top > bestTop) { bestTop = top; best = i; }
+    });
+    // Past the last heading's trigger point, or at the very bottom where a short final
+    // section can never reach it, the last section is the honest answer.
+    const atBottom = doc.scrollHeight - doc.clientHeight - doc.scrollTop < 4;
+    if (atBottom) best = headings.length - 1;
+    if (best < 0) best = 0;
+    setCurrent(best);
+
+    const max = (doc.scrollHeight - doc.clientHeight) || 1;
+    const pct = Math.min(100, Math.max(0, (doc.scrollTop / max) * 100));
+    if (bar) bar.style.width = pct + "%";
+  }
+  function schedule() {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(recompute);
+  }
+
+  // Park the rail in the gutter left of the content, and stand down entirely when there
+  // is not enough room rather than sitting on top of the text. Under 640px the CSS turns it
+  // into a bottom sheet, so this only governs the desktop rail.
+  const RAIL_GAP = 24, RAIL_MIN_LEFT = 12;
+  function placeRail() {
+    if (window.innerWidth <= 640) { nav.style.left = ""; nav.style.visibility = ""; return; }
+    const left = root.getBoundingClientRect().left - nav.offsetWidth - RAIL_GAP;
+    if (left < RAIL_MIN_LEFT) {
+      // No gutter: hide the rail and leave the toggle as the way in.
+      nav.style.visibility = "hidden";
+      toggle.style.display = "inline-flex";
+    } else {
+      nav.style.visibility = "";
+      toggle.style.display = "";
+      nav.style.left = left + "px";
+    }
+  }
+  window.addEventListener("resize", placeRail);
+  placeRail();
+
+  const obs = new IntersectionObserver(schedule, { rootMargin: "-100px 0px -60% 0px", threshold: [0, 1] });
+  headings.forEach(h => obs.observe(h));
+  window.addEventListener("scroll", schedule, { passive: true });
+  window.addEventListener("resize", schedule);
+  recompute();
+
+  // Phone sheet.
+  function openSheet() {
+    nav.classList.add("open");
+    backdrop.classList.add("open");
+    toggle.setAttribute("aria-expanded", "true");
+  }
+  function closeSheet() {
+    nav.classList.remove("open");
+    backdrop.classList.remove("open");
+    toggle.setAttribute("aria-expanded", "false");
+  }
+  toggle.addEventListener("click", () => {
+    if (nav.classList.contains("open")) closeSheet(); else openSheet();
+  });
+  backdrop.addEventListener("click", closeSheet);
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && nav.classList.contains("open")) closeSheet();
+  });
+})();
+</script>
