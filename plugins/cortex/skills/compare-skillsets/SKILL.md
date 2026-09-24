@@ -126,7 +126,6 @@ Do not implement off the back of the audit. When the user does ask:
 | "The shared skill is clearly better, recommend adopting it" | Read the user's equivalent first. It may already beat the shared one, or their instructions may already route away from it. |
 | "Naming the ideas is enough, they can place them" | Placement IS the recommendation. Name the target file for every idea, or leave the row out. |
 | "This idea fits that skill, it is obviously compatible" | Read that skill's hard constraints before routing anything into it. |
-| "The description rewrite will save real tokens" | Check `skillOverrides` in settings first. A skill whose listing is overridden never pays for its description, so shortening it saves nothing. |
 | "The pattern grep found the answer" | A body-wide grep for a frontmatter field also matches example frontmatter inside skill bodies. Scope the match to the frontmatter slice, which is what the audit script does. |
 | "One probe run is evidence" | Single samples lie in both directions. Re-run before you believe a pass or a failure. |
 | "I will tidy the punctuation across this file while I am in it" | Scope every bulk style fix to lines you authored this session. |
