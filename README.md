@@ -30,6 +30,7 @@ Invoke skills with `/cortex:<skill-name>`.
 | `codex-ask` | Get a second opinion from OpenAI Codex CLI | `/cortex:codex-ask Is this approach correct?` |
 | `commit-push-pr` | Stage, commit, push, and open a PR/MR in one flow (auto-detects GitHub vs GitLab) | `/cortex:commit-push-pr` |
 | `helpers` | Shared stdlib-only scripts (adherence probes, corpus measurement, skill audit, safe description edits) used by other skills; not a workflow on its own | `python3 <plugin>/skills/helpers/<script> --help` |
+| `make-slides` | Build an HTML slide deck from the MIT beautiful-html-templates library (by Zara Zhang) | `/cortex:make-slides pitch deck for X` |
 | `name-session` | Suggest a structured `[context] goal` session name and copy the `/rename` command | `/cortex:name-session` |
 | `new-session` | Write a task or continuation brief and launch a new background Claude Code session on it in another folder | `/cortex:new-session ~/code/other-repo` |
 | `session-handoff` | Generate structured handoff document for another agent/engineer | `/cortex:session-handoff` |
@@ -46,10 +47,11 @@ These skills activate automatically when Claude detects you're working in a rele
 | `compare-skillsets` | Weighing an external skillset or plugin against your installed skills |
 | `convert-date` | Converting between Shamsi/Jalali and Gregorian calendars |
 | `create-permission-hook` | Creating permission hooks for CLI tools |
-| `create-plan` | Writing a structured implementation plan to disk as interactive HTML — "create plan", "plan this" |
-| `create-plan-and-execute` | Planning and executing in one go (HTML plan) — "plan and execute", "plan and ship" |
 | `create-plan-and-execute-md` | Planning and executing in one go (markdown plan) — "plan and execute markdown" |
+| `create-plan-and-execute` | Planning and executing in one go (HTML plan) — "plan and execute", "plan and ship" |
 | `create-plan-md` | Writing a plain markdown implementation plan — "create markdown plan" |
+| `create-plan` | Writing a structured implementation plan to disk as interactive HTML — "create plan", "plan this" |
+| `cut-clip` | Cutting a video/audio segment, with boundaries given as spoken phrases |
 | `deep-research` | Researching topics — "what's the latest on X", "research X for me" |
 | `elevenlabs-voice` | Transcribing audio (with speaker diarization) or generating speech via ElevenLabs |
 | `exa-cli` | Exa AI neural search, grounded cited answers, clean content extraction for URLs |
@@ -60,18 +62,24 @@ These skills activate automatically when Claude detects you're working in a rele
 | `figma-cli` | Reading Figma files — node trees, copy, rendering frames to PNG/SVG (read-only) |
 | `find-session` | Finding a past Claude Code session by keyword and giving its resume command |
 | `gemini-cli` | Asking Google Gemini, second opinions, managing Gemini CLI extensions/MCP servers |
+| `generate-image` | Generating or editing an image (OpenAI GPT Image or Gemini Nano Banana) |
 | `glab-cli` | Running GitLab operations — MRs, pipelines, issues, CI logs |
 | `gws-cli` | Interacting with Google Workspace (Gmail, Calendar, Drive, Sheets) |
 | `how-to-html` | Generating or substantially editing an HTML file — plans, reports, dashboards, custom-editor UIs, slides. Ships a diagram geometry verifier, a content density lint, and collapse-layer / report-nav installers |
 | `imsg-cli` | Reading and sending iMessage/SMS on a Mac — chats, history, search |
 | `integrate-cli` | Onboarding a new CLI end-to-end — research, install, auth, generate a `<tool>-cli` skill and permission hook |
 | `learn-from` | Turning mistakes and corrections in the current conversation into edits to CLAUDE.md, memory, or skill files |
+| `md-to-pdf` | Converting a markdown file (Obsidian-flavoured supported) to PDF |
 | `ntn-cli` | Notion via the official `ntn` CLI — pages as Markdown, data sources, raw API, Workers |
+| `post-mortem` | Writing a blameless postmortem / RCA |
 | `python-project-setup` | Setting up new Python projects (uv + ruff + pyright + pytest) |
+| `quick-search` | Fast single-fact web lookups: docs, syntax, versions |
+| `refine-english` | Refining text to sound native, writing feedback, pronunciation help |
 | `signal-cli` | Interacting with Signal — receiving, contacts, groups, sending messages |
 | `slack-cli` | Interacting with Slack — reading, searching, sending, reactions |
 | `snow-cli` | Running Snowflake operations — SQL queries, schema inspection, stages, Cortex |
 | `stripe-cli` | Stripe in test mode — customers, charges, subscriptions, invoices, webhooks |
+| `summarize-content` | Summarising a URL, YouTube video, podcast, or local media file |
 | `tgcli` | Interacting with Telegram — reading chats, sending messages, searching |
 | `understand-session` | Teaching and quizzing you on a session's work or a PR until you can explain it |
 | `unleash-cli` | Unleash feature flags — state per environment, toggles, rollouts, audit log |
@@ -130,6 +138,7 @@ Some skills require external CLI tools. See [SETUP.md](SETUP.md) for installatio
 | `codex-ask` | `codex` (OpenAI Codex CLI) |
 | `commit-push-pr` | `gh` and/or `glab` (matches the remote) |
 | `convert-date` | `python3` with `jdatetime` |
+| `cut-clip` | `yt-dlp`, `ffmpeg`, `curl`, ElevenLabs API key |
 | `elevenlabs-voice` | `curl`, `jq`, `python3`, ElevenLabs API key |
 | `exa-cli` | `uv`, Exa API key |
 | `fetch-raindrop-bookmarks` | Raindrop.io API token |
@@ -138,11 +147,14 @@ Some skills require external CLI tools. See [SETUP.md](SETUP.md) for installatio
 | `figma-cli` | `python3`, Figma personal access token |
 | `find-session` | `python3` (stdlib only) |
 | `gemini-cli` | `gemini` (Google Gemini CLI), `GEMINI_API_KEY` |
+| `generate-image` | `OPENAI_API_KEY` and/or `GEMINI_API_KEY` |
 | `glab-cli` | `glab` (GitLab CLI) |
 | `gws-cli` | `gws` (Google Workspace CLI) |
 | `helpers` | `python3`; `claude` CLI on PATH for `adherence-probe.py` |
 | `imsg-cli` | `imsg` (iMessage CLI, macOS only) |
 | `integrate-cli` | `jq` (for generated permission hooks) |
+| `make-slides` | `git` |
+| `md-to-pdf` | `pandoc`, Google Chrome or Chromium |
 | `new-session` | Claude Code CLI with `--bg` support (or `dispatch_mode: print`) |
 | `ntn-cli` | `ntn` (Notion CLI) |
 | `python-project-setup` | `uv` |
@@ -150,6 +162,7 @@ Some skills require external CLI tools. See [SETUP.md](SETUP.md) for installatio
 | `slack-cli` | `agent-slack` (Slack CLI) |
 | `snow-cli` | `snow` (Snowflake CLI) |
 | `stripe-cli` | `stripe` (Stripe CLI) |
+| `summarize-content` | `summarize` CLI |
 | `tgcli` | `tgcli` (Telegram CLI) |
 | `unleash-cli` | `python3`, Unleash Admin API token |
 
