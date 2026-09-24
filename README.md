@@ -29,6 +29,8 @@ Invoke skills with `/cortex:<skill-name>`.
 | `babysit-pr` | Monitor a PR — auto-fix CI failures, address review feedback, track deploys | `/loop 5m /cortex:babysit-pr #123` |
 | `codex-ask` | Get a second opinion from OpenAI Codex CLI | `/cortex:codex-ask Is this approach correct?` |
 | `commit-push-pr` | Stage, commit, push, and open a PR/MR in one flow (auto-detects GitHub vs GitLab) | `/cortex:commit-push-pr` |
+| `name-session` | Suggest a structured `[context] goal` session name and copy the `/rename` command | `/cortex:name-session` |
+| `new-session` | Write a task or continuation brief and launch a new background Claude Code session on it in another folder | `/cortex:new-session ~/code/other-repo` |
 | `session-handoff` | Generate structured handoff document for another agent/engineer | `/cortex:session-handoff` |
 
 ### Auto-Triggered
@@ -38,18 +40,21 @@ These skills activate automatically when Claude detects you're working in a rele
 | Skill | Triggers When |
 |-------|---------------|
 | `bird-cli` | Interacting with Twitter/X — reading, searching, posting, replies, bookmarks |
+| `catch-up` | Re-briefing you on the current (resumed or long) session — "catch me up", "where were we" |
 | `clickup-cli` | Running ClickUp operations — tasks, comments, search, sprints, time tracking |
 | `convert-date` | Converting between Shamsi/Jalali and Gregorian calendars |
 | `create-permission-hook` | Creating permission hooks for CLI tools |
 | `deep-research` | Researching topics — "what's the latest on X", "research X for me" |
 | `fetch-raindrop-bookmarks` | Fetching and triaging Raindrop.io bookmarks |
 | `fetch-twitter-bookmarks` | Fetching and triaging Twitter/X bookmarks |
+| `find-session` | Finding a past Claude Code session by keyword and giving its resume command |
 | `glab-cli` | Running GitLab operations — MRs, pipelines, issues, CI logs |
 | `gws-cli` | Interacting with Google Workspace (Gmail, Calendar, Drive, Sheets) |
 | `python-project-setup` | Setting up new Python projects (uv + ruff + pyright + pytest) |
 | `slack-cli` | Interacting with Slack — reading, searching, sending, reactions |
 | `snow-cli` | Running Snowflake operations — SQL queries, schema inspection, stages, Cortex |
 | `tgcli` | Interacting with Telegram — reading chats, sending messages, searching |
+| `understand-session` | Teaching and quizzing you on a session's work or a PR until you can explain it |
 
 ## Shared Hooks
 
@@ -79,8 +84,10 @@ Some skills require external CLI tools. See [SETUP.md](SETUP.md) for installatio
 | `convert-date` | `python3` with `jdatetime` |
 | `fetch-raindrop-bookmarks` | Raindrop.io API token |
 | `fetch-twitter-bookmarks` | `bird` (Twitter/X CLI); optional `yt-dlp` for media |
+| `find-session` | `python3` (stdlib only) |
 | `glab-cli` | `glab` (GitLab CLI) |
 | `gws-cli` | `gws` (Google Workspace CLI) |
+| `new-session` | Claude Code CLI with `--bg` support (or `dispatch_mode: print`) |
 | `python-project-setup` | `uv` |
 | `slack-cli` | `agent-slack` (Slack CLI) |
 | `snow-cli` | `snow` (Snowflake CLI) |
