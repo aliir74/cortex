@@ -240,6 +240,16 @@ export ELEVENLABS_API_KEY="<key>"
 
 or save it to `~/.config/elevenlabs/api_key` (`chmod 600`; override the location with `ELEVENLABS_API_KEY_FILE`).
 
+### find-session
+
+Requires Python 3 (standard library only, no packages). Most macOS and Linux systems ship it; otherwise `brew install python` or your distro's package.
+
+Verify: `python3 --version`.
+
+### new-session
+
+Uses the Claude Code CLI itself. Background launch needs a version that supports `claude --bg` (check `claude --help`); on older versions set `dispatch_mode: print` in `${CLAUDE_PLUGIN_DATA}/preferences/new-session.md` to get a command to run yourself.
+
 ### integrate-cli
 
 Generated permission hooks parse tool input with `jq`:
