@@ -41,9 +41,15 @@ These skills activate automatically when Claude detects you're working in a rele
 | `clickup-cli` | Running ClickUp operations — tasks, comments, search, sprints, time tracking |
 | `convert-date` | Converting between Shamsi/Jalali and Gregorian calendars |
 | `create-permission-hook` | Creating permission hooks for CLI tools |
+| `create-plan` | Writing a structured implementation plan to disk as interactive HTML — "create plan", "plan this" |
+| `create-plan-and-execute` | Planning and executing in one go (HTML plan) — "plan and execute", "plan and ship" |
+| `create-plan-and-execute-md` | Planning and executing in one go (markdown plan) — "plan and execute markdown" |
+| `create-plan-md` | Writing a plain markdown implementation plan — "create markdown plan" |
 | `deep-research` | Researching topics — "what's the latest on X", "research X for me" |
 | `elevenlabs-voice` | Transcribing audio (with speaker diarization) or generating speech via ElevenLabs |
 | `exa-cli` | Exa AI neural search, grounded cited answers, clean content extraction for URLs |
+| `execute-plan-md` | Executing a markdown plan task-by-task — "execute markdown plan" |
+| `execute-plan` | Executing an HTML plan task-by-task with per-step verification and commits — "execute plan", "run the plan" |
 | `fetch-raindrop-bookmarks` | Fetching and triaging Raindrop.io bookmarks |
 | `fetch-twitter-bookmarks` | Fetching and triaging Twitter/X bookmarks |
 | `figma-cli` | Reading Figma files — node trees, copy, rendering frames to PNG/SVG (read-only) |
