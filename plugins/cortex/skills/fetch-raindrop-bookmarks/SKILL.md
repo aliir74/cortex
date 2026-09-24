@@ -30,6 +30,10 @@ Load preferences at the start of every run:
    - **collection_id**: `collection_id` from preferences, else `0` (Unsorted).
    - **output_dir**: `output_dir` from preferences, else `${CLAUDE_PLUGIN_DATA}/raindrop-bookmarks/`. Create it with `mkdir -p` before saving.
    - **delete_after_save**: `delete_after_save` from preferences, else `false`.
+   - **curate_dir**: `curate_dir` from preferences, else unset. When set, the triage step offers a 4th "curate" option and writes curated items here (created with `mkdir -p` on demand).
+   - **curate_auto_why**: `curate_auto_why` from preferences, else `false`. Only consulted when `curate_dir` is set.
+   - **extract_full_content**: `extract_full_content` from preferences, else `false`.
+   - **extra_frontmatter**: parse `extra_frontmatter` from preferences as a YAML mapping, else empty `{}`.
 
 ## State File
 
@@ -77,40 +81,69 @@ Excerpt: First ~150 chars of excerpt...
 Tags: tag1, tag2
 ```
 
-Then ask once:
+Then ask once. When `curate_dir` is **unset** (default), use the 3-option prompt:
 
 ```
 For each, choose: **save** | **skip** | **open**
 (e.g. "save 1 3, skip 2, open 4" or "save all", "skip all")
 ```
 
+When `curate_dir` is **set**, include the extra option:
+
+```
+For each, choose: **save** | **curate** | **skip** | **open**
+(e.g. "curate 1, save 2 3, skip 4" or "curate all")
+```
+
 - **save** — Write a markdown file to `$OUTPUT_DIR` and mark seen.
+- **curate** (only if `curate_dir` is set) — Write a markdown file to `$CURATE_DIR` with `starred: true` plus a `why` recall hook (see Step 3 for how `why` is resolved), then mark seen.
 - **skip** — Mark seen, take no further action.
 - **open** — Use WebFetch to fetch the URL and show a brief preview, then re-prompt for that item.
 
-If `delete_after_save` is true, also delete the bookmark from Raindrop (see step 4).
+If `delete_after_save` is true, also delete the bookmark from Raindrop (see step 4). This applies to both save and curate decisions.
 
-### 3. Save selected bookmarks
+### 3. Save / curate selected bookmarks
 
-For each "save" item, write a markdown file at `$OUTPUT_DIR/<slug>-<id>.md` with simple frontmatter:
+For each selected item, write a markdown file at `$DEST/<slug>-<id>.md` where `$DEST` is `$OUTPUT_DIR` for **save** items and `$CURATE_DIR` for **curate** items. Use a slug derived from the title (lowercase, hyphenated, ASCII-safe, max 60 chars). If the title is empty, use the domain.
 
-```markdown
----
+**Default frontmatter (all items):**
+
+```yaml
 title: <title>
 url: <link>
 date: <YYYY-MM-DD>
 tags: [tag1, tag2]
 raindrop_id: <id>
----
-
-<excerpt>
 ```
 
-Use a slug derived from the title (lowercase, hyphenated, ASCII-safe, max 60 chars). If the title is empty, use the domain.
+**Curate-only frontmatter additions** (when `$DEST == $CURATE_DIR`):
 
-Optionally, when the user explicitly asks for full content, use WebFetch to grab the article body and append it under a `## Content` heading.
+```yaml
+starred: true
+why: <one-sentence recall hook>
+```
+
+Resolve `why` for curate items as follows:
+- If `curate_auto_why: true`, auto-generate a one-sentence hook from the bookmark's title + excerpt (pattern: what the reader will recognize it by later — the novel claim, counter-intuitive point, or specific utility).
+- Otherwise, ask the user "What made this interesting?" once per curate item (batch up to 4 per `AskUserQuestion` when available) and use the free-text response verbatim.
+
+**Extra frontmatter merge:** If `extra_frontmatter` is non-empty, merge its keys into the frontmatter AFTER the defaults. Skip any key that would overwrite a default (`title`, `url`, `date`, `tags`, `raindrop_id`, and for curate items `starred`, `why`) — defaults win. Emit a one-line warning for each skipped conflict.
+
+**Body:** Start with the excerpt. If `extract_full_content: true`, append a `## Content` section with the extracted article body:
+
+1. Check if `trafilatura` is on PATH (`command -v trafilatura`). If yes:
+   ```bash
+   trafilatura --output-format markdown --url "<link>" 2>/dev/null
+   ```
+   Use the output as the content.
+2. Otherwise, use WebFetch with a prompt like `"Extract the main article body as clean markdown. Drop navigation, ads, footers, comments."` and use the result.
+3. If both fail (non-zero exit, empty output, paywall, network error), emit a one-line warning (`"full-content extraction failed for <url> — saving excerpt only"`) and skip the `## Content` section. **Never block the save on extraction failure.**
+
+The user may also explicitly ask for full content per-item even when `extract_full_content` is false — in that case run the same extraction flow for just those items.
 
 ### 4. Delete from Raindrop (only if `delete_after_save=true`)
+
+Applies to both **save** and **curate** items (skip items are handled via `.seen.json` only):
 
 ```bash
 curl -sS -X DELETE \
@@ -128,8 +161,10 @@ Append every processed ID (saved, skipped, opened-then-decided) to `.seen.json`.
 
 Summarize:
 - How many saved (with absolute file paths)
+- How many curated (with absolute file paths) — only when `curate_dir` is set
 - How many skipped
 - How many deleted from Raindrop (if applicable)
+- How many full-content extractions succeeded / fell back to excerpt (when `extract_full_content: true`)
 - Any API errors
 
 ## API Quick Reference
@@ -157,3 +192,6 @@ All endpoints require `Authorization: Bearer <token>`.
 - The skill never deletes bookmarks unless `delete_after_save=true` is explicitly set.
 - The "seen" state is local to this machine. Re-listing on a fresh machine will surface every bookmark again until they're seen or deleted.
 - For "Unsorted" use `collection_id: 0`. For "All" use `-1`. For "Trash" use `-99`.
+- **Curate** is an opt-in second bucket — enable it by setting `curate_dir` in preferences. If unset, the skill falls back to the original 3-option triage and behaves exactly as it did before `curate_dir` existed.
+- **Full-content extraction** via `trafilatura` requires a one-time install (`pipx install trafilatura` or `uv tool install trafilatura`). The skill degrades gracefully to WebFetch and then to excerpt-only if neither works — extraction failures never block a save.
+- **`extra_frontmatter`** is merged key-by-key AFTER defaults; it cannot overwrite skill-managed keys (`url`, `raindrop_id`, etc.). Use it to add downstream-tool keys like `interest`, `status`, or custom tags.
