@@ -29,6 +29,7 @@ Invoke skills with `/cortex:<skill-name>`.
 | `babysit-pr` | Monitor a PR — auto-fix CI failures, address review feedback, track deploys | `/loop 5m /cortex:babysit-pr #123` |
 | `codex-ask` | Get a second opinion from OpenAI Codex CLI | `/cortex:codex-ask Is this approach correct?` |
 | `commit-push-pr` | Stage, commit, push, and open a PR/MR in one flow (auto-detects GitHub vs GitLab) | `/cortex:commit-push-pr` |
+| `helpers` | Shared stdlib-only scripts (adherence probes, corpus measurement, skill audit, safe description edits) used by other skills; not a workflow on its own | `python3 <plugin>/skills/helpers/<script> --help` |
 | `session-handoff` | Generate structured handoff document for another agent/engineer | `/cortex:session-handoff` |
 
 ### Auto-Triggered
@@ -39,6 +40,7 @@ These skills activate automatically when Claude detects you're working in a rele
 |-------|---------------|
 | `bird-cli` | Interacting with Twitter/X — reading, searching, posting, replies, bookmarks |
 | `clickup-cli` | Running ClickUp operations — tasks, comments, search, sprints, time tracking |
+| `compare-skillsets` | Weighing an external skillset or plugin against your installed skills |
 | `convert-date` | Converting between Shamsi/Jalali and Gregorian calendars |
 | `create-permission-hook` | Creating permission hooks for CLI tools |
 | `deep-research` | Researching topics — "what's the latest on X", "research X for me" |
@@ -46,10 +48,16 @@ These skills activate automatically when Claude detects you're working in a rele
 | `fetch-twitter-bookmarks` | Fetching and triaging Twitter/X bookmarks |
 | `glab-cli` | Running GitLab operations — MRs, pipelines, issues, CI logs |
 | `gws-cli` | Interacting with Google Workspace (Gmail, Calendar, Drive, Sheets) |
+| `integrate-cli` | Onboarding a new CLI end-to-end — research, install, auth, generate a `<tool>-cli` skill and permission hook |
+| `learn-from` | Turning mistakes and corrections in the current conversation into edits to CLAUDE.md, memory, or skill files |
 | `python-project-setup` | Setting up new Python projects (uv + ruff + pyright + pytest) |
 | `slack-cli` | Interacting with Slack — reading, searching, sending, reactions |
 | `snow-cli` | Running Snowflake operations — SQL queries, schema inspection, stages, Cortex |
 | `tgcli` | Interacting with Telegram — reading chats, sending messages, searching |
+| `update-cli` | Upgrading an installed CLI and syncing its `<tool>-cli` skill and permission hook with new/removed commands |
+| `update-permissions` | Adding, removing, or changing Claude Code permission rules and hooks, with consolidation and a security review |
+| `why-you-asked-me` | Diagnosing why Claude prompted for permission on a command that should have been auto-allowed |
+| `writing-skills` | Creating or editing a skill or a CLAUDE.md rule — triggers-only descriptions, form-to-failure, probe-first testing |
 
 ## Shared Hooks
 
@@ -81,6 +89,8 @@ Some skills require external CLI tools. See [SETUP.md](SETUP.md) for installatio
 | `fetch-twitter-bookmarks` | `bird` (Twitter/X CLI); optional `yt-dlp` for media |
 | `glab-cli` | `glab` (GitLab CLI) |
 | `gws-cli` | `gws` (Google Workspace CLI) |
+| `helpers` | `python3`; `claude` CLI on PATH for `adherence-probe.py` |
+| `integrate-cli` | `jq` (for generated permission hooks) |
 | `python-project-setup` | `uv` |
 | `slack-cli` | `agent-slack` (Slack CLI) |
 | `snow-cli` | `snow` (Snowflake CLI) |
