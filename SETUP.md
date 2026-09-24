@@ -187,10 +187,6 @@ Requires a Raindrop.io API token:
 
 Requires the `bird` CLI (see the **bird-cli** section above for install + auth). Optional: install `yt-dlp` (`brew install yt-dlp`) if you want the skill to download tweet videos when `download_media=true`.
 
-### discuss-comments
-
-Requires the `gh` CLI (see the **babysit-pr** section above for install + auth).
-
 ### summarize-content
 
 Requires the `summarize` CLI (<https://summarize.sh>, MIT):

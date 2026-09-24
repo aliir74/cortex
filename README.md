@@ -44,22 +44,17 @@ These skills activate automatically when Claude detects you're working in a rele
 | `create-permission-hook` | Creating permission hooks for CLI tools |
 | `cut-clip` | Cutting a video/audio segment, with boundaries given as spoken phrases |
 | `deep-research` | Researching topics — "what's the latest on X", "research X for me" |
-| `discuss-comments` | Replying on GitHub to PR review comments that @-mention you |
 | `fetch-raindrop-bookmarks` | Fetching and triaging Raindrop.io bookmarks |
 | `fetch-twitter-bookmarks` | Fetching and triaging Twitter/X bookmarks |
 | `generate-image` | Generating or editing an image (OpenAI GPT Image or Gemini Nano Banana) |
 | `glab-cli` | Running GitLab operations — MRs, pipelines, issues, CI logs |
 | `gws-cli` | Interacting with Google Workspace (Gmail, Calendar, Drive, Sheets) |
-<<<<<<< HEAD
+| `how-to-html` | Generating or substantially editing an HTML file — plans, reports, dashboards, custom-editor UIs, slides. Ships a diagram geometry verifier, a content density lint, and collapse-layer / report-nav installers |
 | `md-to-pdf` | Converting a markdown file (Obsidian-flavoured supported) to PDF |
 | `post-mortem` | Writing a blameless postmortem / RCA |
-=======
-| `how-to-html` | Generating or substantially editing an HTML file — plans, reports, dashboards, custom-editor UIs, slides. Ships a diagram geometry verifier, a content density lint, and collapse-layer / report-nav installers |
->>>>>>> origin/main
 | `python-project-setup` | Setting up new Python projects (uv + ruff + pyright + pytest) |
 | `quick-search` | Fast single-fact web lookups: docs, syntax, versions |
 | `refine-english` | Refining text to sound native, writing feedback, pronunciation help |
-| `simplifying-code` | Cleaning up freshly written code before committing, without changing behaviour |
 | `slack-cli` | Interacting with Slack — reading, searching, sending, reactions |
 | `snow-cli` | Running Snowflake operations — SQL queries, schema inspection, stages, Cortex |
 | `summarize-content` | Summarising a URL, YouTube video, podcast, or local media file |
@@ -92,7 +87,6 @@ Some skills require external CLI tools. See [SETUP.md](SETUP.md) for installatio
 | `commit-push-pr` | `gh` and/or `glab` (matches the remote) |
 | `convert-date` | `python3` with `jdatetime` |
 | `cut-clip` | `yt-dlp`, `ffmpeg`, `curl`, ElevenLabs API key |
-| `discuss-comments` | `gh` (GitHub CLI) |
 | `fetch-raindrop-bookmarks` | Raindrop.io API token |
 | `how-to-html` | `python3` 3.9+ (stdlib only, for the bundled verifier, density lint and installers) |
 | `fetch-twitter-bookmarks` | `bird` (Twitter/X CLI); optional `yt-dlp` for media |
