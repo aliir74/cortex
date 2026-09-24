@@ -30,6 +30,8 @@ Invoke skills with `/cortex:<skill-name>`.
 | `codex-ask` | Get a second opinion from OpenAI Codex CLI | `/cortex:codex-ask Is this approach correct?` |
 | `commit-push-pr` | Stage, commit, push, and open a PR/MR in one flow (auto-detects GitHub vs GitLab) | `/cortex:commit-push-pr` |
 | `helpers` | Shared stdlib-only scripts (adherence probes, corpus measurement, skill audit, safe description edits) used by other skills; not a workflow on its own | `python3 <plugin>/skills/helpers/<script> --help` |
+| `name-session` | Suggest a structured `[context] goal` session name and copy the `/rename` command | `/cortex:name-session` |
+| `new-session` | Write a task or continuation brief and launch a new background Claude Code session on it in another folder | `/cortex:new-session ~/code/other-repo` |
 | `session-handoff` | Generate structured handoff document for another agent/engineer | `/cortex:session-handoff` |
 
 ### Auto-Triggered
@@ -39,6 +41,7 @@ These skills activate automatically when Claude detects you're working in a rele
 | Skill | Triggers When |
 |-------|---------------|
 | `bird-cli` | Interacting with Twitter/X — reading, searching, posting, replies, bookmarks |
+| `catch-up` | Re-briefing you on the current (resumed or long) session — "catch me up", "where were we" |
 | `clickup-cli` | Running ClickUp operations — tasks, comments, search, sprints, time tracking |
 | `compare-skillsets` | Weighing an external skillset or plugin against your installed skills |
 | `convert-date` | Converting between Shamsi/Jalali and Gregorian calendars |
@@ -55,6 +58,7 @@ These skills activate automatically when Claude detects you're working in a rele
 | `fetch-raindrop-bookmarks` | Fetching and triaging Raindrop.io bookmarks |
 | `fetch-twitter-bookmarks` | Fetching and triaging Twitter/X bookmarks |
 | `figma-cli` | Reading Figma files — node trees, copy, rendering frames to PNG/SVG (read-only) |
+| `find-session` | Finding a past Claude Code session by keyword and giving its resume command |
 | `gemini-cli` | Asking Google Gemini, second opinions, managing Gemini CLI extensions/MCP servers |
 | `glab-cli` | Running GitLab operations — MRs, pipelines, issues, CI logs |
 | `gws-cli` | Interacting with Google Workspace (Gmail, Calendar, Drive, Sheets) |
@@ -69,6 +73,7 @@ These skills activate automatically when Claude detects you're working in a rele
 | `snow-cli` | Running Snowflake operations — SQL queries, schema inspection, stages, Cortex |
 | `stripe-cli` | Stripe in test mode — customers, charges, subscriptions, invoices, webhooks |
 | `tgcli` | Interacting with Telegram — reading chats, sending messages, searching |
+| `understand-session` | Teaching and quizzing you on a session's work or a PR until you can explain it |
 | `unleash-cli` | Unleash feature flags — state per environment, toggles, rollouts, audit log |
 | `update-cli` | Upgrading an installed CLI and syncing its `<tool>-cli` skill and permission hook with new/removed commands |
 | `update-permissions` | Adding, removing, or changing Claude Code permission rules and hooks, with consolidation and a security review |
@@ -131,12 +136,14 @@ Some skills require external CLI tools. See [SETUP.md](SETUP.md) for installatio
 | `how-to-html` | `python3` 3.9+ (stdlib only, for the bundled verifier, density lint and installers) |
 | `fetch-twitter-bookmarks` | `bird` (Twitter/X CLI); optional `yt-dlp` for media |
 | `figma-cli` | `python3`, Figma personal access token |
+| `find-session` | `python3` (stdlib only) |
 | `gemini-cli` | `gemini` (Google Gemini CLI), `GEMINI_API_KEY` |
 | `glab-cli` | `glab` (GitLab CLI) |
 | `gws-cli` | `gws` (Google Workspace CLI) |
 | `helpers` | `python3`; `claude` CLI on PATH for `adherence-probe.py` |
 | `imsg-cli` | `imsg` (iMessage CLI, macOS only) |
 | `integrate-cli` | `jq` (for generated permission hooks) |
+| `new-session` | Claude Code CLI with `--bg` support (or `dispatch_mode: print`) |
 | `ntn-cli` | `ntn` (Notion CLI) |
 | `python-project-setup` | `uv` |
 | `signal-cli` | `signal-cli`; `qrencode` for device linking |
