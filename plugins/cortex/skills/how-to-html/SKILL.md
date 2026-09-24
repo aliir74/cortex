@@ -1,6 +1,6 @@
 ---
 name: how-to-html
-description: Use whenever generating or substantially editing an HTML file: plans, reports, dashboards, custom-editor UIs, slides, anything written to a `.html` file. SKIP for trivial fragments under about 5KB or files inside node_modules, dist, build or .git.
+description: Use whenever generating or substantially editing an HTML file (plans, reports, dashboards, custom-editor UIs, slides, anything written to a `.html` file). SKIP for trivial fragments under about 5KB or files inside node_modules, dist, build or .git.
 ---
 
 # How to HTML
