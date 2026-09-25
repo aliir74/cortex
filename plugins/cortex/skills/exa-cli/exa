@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Thin wrapper for the Exa AI search API. Runs cli.py via uv with exa-py
+# ephemerally loaded. uv caches the dep after the first call, so subsequent
+# invocations are fast.
+#
+# Self-sources ~/.exa.env when EXA_API_KEY is unset, so dispatched sub-agents
+# inherit the key even if the launching shell never sourced it. Falls back
+# cleanly (cli.py errors) if neither is present.
+set -euo pipefail
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if [[ -z "${EXA_API_KEY:-}" && -f "$HOME/.exa.env" ]]; then
+  # shellcheck disable=SC1091
+  source "$HOME/.exa.env"
+fi
+
+exec uv run --quiet --with exa-py==2.16.0 "$SCRIPT_DIR/cli.py" "$@"

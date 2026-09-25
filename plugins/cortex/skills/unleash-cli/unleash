@@ -1,0 +1,473 @@
+#!/usr/bin/env python3
+"""unleash: a thin, non-interactive CLI over the Unleash Admin REST API.
+
+Stdlib only. JSON-first so it is safe to script and to drive from an agent.
+Verified against Unleash API 8.1.0 (OpenAPI /docs/openapi.json).
+
+Config lives in ~/.unleash.env (chmod 600):
+
+    UNLEASH_URL=https://unleash.example.com
+    UNLEASH_PAT=user:xxxxxxxx...
+    UNLEASH_URL_STAGING=https://unleash-staging.example.com
+    UNLEASH_PAT_STAGING=user:xxxxxxxx...
+
+Select an instance with --profile (default: "default", or $UNLEASH_PROFILE).
+Profile "default" reads the unsuffixed pair; any other NAME reads
+UNLEASH_URL_<NAME> / UNLEASH_PAT_<NAME>.
+"""
+
+import argparse
+import json
+import os
+import sys
+import urllib.error
+import urllib.parse
+import urllib.request
+
+ENV_FILE = os.path.expanduser("~/.unleash.env")
+TIMEOUT = 30
+
+
+# ---------------------------------------------------------------- config
+
+
+def load_env_file():
+    if not os.path.exists(ENV_FILE):
+        return
+    with open(ENV_FILE) as fh:
+        for raw in fh:
+            line = raw.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, val = line.split("=", 1)
+            os.environ.setdefault(key.strip(), val.strip().strip('"').strip("'"))
+
+
+def resolve_target(profile, base_url_override=None):
+    suffix = "" if profile == "default" else "_" + profile.upper().replace("-", "_")
+    url = base_url_override or os.environ.get("UNLEASH_URL" + suffix)
+    pat = os.environ.get("UNLEASH_PAT" + suffix)
+    if not url:
+        die("no base URL for profile '%s'. Set UNLEASH_URL%s in %s or pass --base-url."
+            % (profile, suffix, ENV_FILE))
+    if not pat:
+        die("no token for profile '%s'. Set UNLEASH_PAT%s in %s.\n"
+            "Generate one in the Unleash UI under Profile > Personal API tokens,\n"
+            "or ask an admin for a service account token. A client/server SDK token\n"
+            "(UNLEASH_SERVER_API_TOKEN) will NOT work against /api/admin."
+            % (profile, suffix, ENV_FILE))
+    return url.rstrip("/"), pat
+
+
+# ---------------------------------------------------------------- http
+
+
+def request(method, path, base, token, query=None, body=None):
+    url = base + path
+    if query:
+        clean = {k: v for k, v in query.items() if v is not None}
+        if clean:
+            url += "?" + urllib.parse.urlencode(clean)
+    data = json.dumps(body).encode() if body is not None else None
+    req = urllib.request.Request(url, data=data, method=method)
+    req.add_header("Authorization", token)
+    req.add_header("Accept", "application/json")
+    if data:
+        req.add_header("Content-Type", "application/json")
+    try:
+        with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
+            raw = resp.read().decode()
+            if not raw.strip():
+                return {"status": resp.status}
+            try:
+                return json.loads(raw)
+            except json.JSONDecodeError:
+                return {"status": resp.status, "raw": raw}
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode(errors="replace")
+        try:
+            parsed = json.loads(detail)
+            detail = parsed.get("message") or parsed.get("details") or json.dumps(parsed)
+        except Exception:
+            pass
+        hint = ""
+        if exc.code in (401, 403):
+            hint = ("\nHint: /api/admin needs a personal access token or service account "
+                    "token, not an SDK client token.")
+        die("HTTP %s on %s %s\n%s%s" % (exc.code, method, path, detail, hint))
+    except urllib.error.URLError as exc:
+        die("cannot reach %s: %s" % (base, exc.reason))
+
+
+# ---------------------------------------------------------------- output
+
+
+def die(msg, code=1):
+    sys.stderr.write("unleash: %s\n" % msg)
+    sys.exit(code)
+
+
+def emit(args, payload, rows=None, headers=None):
+    """Print JSON when --json or when there is no table view for this result."""
+    if args.json or rows is None:
+        json.dump(payload, sys.stdout, indent=2, sort_keys=False)
+        sys.stdout.write("\n")
+        return
+    if not rows:
+        sys.stderr.write("(no results)\n")
+        return
+    cols = [len(h) for h in headers]
+    text = [[("" if c is None else str(c)) for c in r] for r in rows]
+    for r in text:
+        for i, c in enumerate(r):
+            cols[i] = max(cols[i], len(c))
+    line = "  ".join(h.upper().ljust(cols[i]) for i, h in enumerate(headers))
+    print(line.rstrip())
+    print("  ".join("-" * cols[i] for i in range(len(headers))))
+    for r in text:
+        print("  ".join(c.ljust(cols[i]) for i, c in enumerate(r)).rstrip())
+
+
+def emit_write(args, payload):
+    """Write commands already print a human sentence; only add JSON when asked.
+
+    Routing these through emit() with empty rows made it print "(no results)" after
+    every successful write, which read like a failure.
+    """
+    if args.json:
+        json.dump(payload, sys.stdout, indent=2)
+        sys.stdout.write("\n")
+
+
+def env_summary(feature):
+    """Compact 'production=on, dev=off' string from a feature's environments."""
+    envs = feature.get("environments") or []
+    parts = []
+    for e in envs:
+        name = e.get("name")
+        state = "on" if e.get("enabled") else "off"
+        parts.append("%s=%s" % (name, state))
+    return ", ".join(parts)
+
+
+# ---------------------------------------------------------------- commands
+
+
+def cmd_whoami(args, base, token):
+    data = request("GET", "/api/admin/user", base, token)
+    user = data.get("user", data) if isinstance(data, dict) else data
+    # /api/admin/user does not return rootRole, so derive the useful bit from the
+    # permissions list instead: an ADMIN entry means a root admin token.
+    perms = data.get("permissions") or [] if isinstance(data, dict) else []
+    names = {p.get("permission") for p in perms if isinstance(p, dict)}
+    role = "ADMIN" if "ADMIN" in names else (user.get("accountType") or "user")
+    rows = [[user.get("id"), user.get("username") or user.get("email"),
+             user.get("name"), role, len(perms)]]
+    emit(args, data, rows, ["id", "username", "name", "access", "permissions"])
+
+
+def cmd_projects_list(args, base, token):
+    data = request("GET", "/api/admin/projects", base, token)
+    projects = data.get("projects", data) if isinstance(data, dict) else data
+    rows = [[p.get("id"), p.get("name"), p.get("featureCount"), p.get("health")]
+            for p in projects]
+    emit(args, data, rows, ["id", "name", "flags", "health"])
+
+
+def cmd_envs_list(args, base, token):
+    data = request("GET", "/api/admin/environments", base, token)
+    envs = data.get("environments", data) if isinstance(data, dict) else data
+    rows = [[e.get("name"), e.get("type"), "yes" if e.get("enabled") else "no",
+             e.get("sortOrder")] for e in envs]
+    emit(args, data, rows, ["name", "type", "enabled", "order"])
+
+
+def cmd_strategies_list(args, base, token):
+    data = request("GET", "/api/admin/strategies", base, token)
+    strats = data.get("strategies", data) if isinstance(data, dict) else data
+    rows = [[s.get("name"), s.get("title"), "yes" if s.get("deprecated") else "no",
+             (s.get("description") or "")[:60]] for s in strats]
+    emit(args, data, rows, ["name", "title", "deprecated", "description"])
+
+
+def cmd_flags_list(args, base, token):
+    query = {
+        "query": args.query,
+        "project": ("IS:" + args.project) if args.project else None,
+        "type": ("IS:" + args.type) if args.type else None,
+        "tag": args.tag,
+        "limit": args.limit,
+        "sortBy": args.sort_by,
+        "sortOrder": args.sort_order,
+    }
+    data = request("GET", "/api/admin/search/features", base, token, query=query)
+    features = data.get("features", []) if isinstance(data, dict) else data
+    rows = [[f.get("name"), f.get("project"), f.get("type"),
+             "yes" if f.get("stale") else "no", env_summary(f)] for f in features]
+    emit(args, data, rows, ["name", "project", "type", "stale", "environments"])
+
+
+def cmd_flag_get(args, base, token):
+    path = "/api/admin/projects/%s/features/%s" % (
+        urllib.parse.quote(args.project), urllib.parse.quote(args.name))
+    data = request("GET", path, base, token)
+    rows = [[e.get("name"), "on" if e.get("enabled") else "off",
+             len(e.get("strategies") or []),
+             ", ".join(s.get("name", "") for s in (e.get("strategies") or []))]
+            for e in (data.get("environments") or [])]
+    if not args.json:
+        print("name:        %s" % data.get("name"))
+        print("project:     %s" % data.get("project"))
+        print("type:        %s" % data.get("type"))
+        print("stale:       %s" % data.get("stale"))
+        print("description: %s" % (data.get("description") or ""))
+        print()
+    emit(args, data, rows, ["environment", "state", "strategies", "strategy names"])
+
+
+def cmd_flag_create(args, base, token):
+    body = {"name": args.name, "type": args.type}
+    if args.description:
+        body["description"] = args.description
+    if args.impression_data:
+        body["impressionData"] = True
+    path = "/api/admin/projects/%s/features" % urllib.parse.quote(args.project)
+    data = request("POST", path, base, token, body=body)
+    if not args.json:
+        print("created flag '%s' in project '%s' (type: %s)"
+              % (data.get("name", args.name), args.project, data.get("type", args.type)))
+        print("it is off in every environment until you toggle it.")
+    emit_write(args, data)
+
+
+def cmd_flag_toggle(args, base, token):
+    state = "on" if args.on else "off"
+    path = "/api/admin/projects/%s/features/%s/environments/%s/%s" % (
+        urllib.parse.quote(args.project), urllib.parse.quote(args.name),
+        urllib.parse.quote(args.env), state)
+    data = request("POST", path, base, token)
+    if not args.json:
+        print("%s: %s is now %s in '%s'" % (args.project, args.name, state, args.env))
+    emit_write(args, data)
+
+
+def cmd_flag_rollout(args, base, token):
+    """Set a gradual rollout percentage on one environment.
+
+    Updates the existing flexibleRollout strategy if there is exactly one,
+    otherwise adds a new one. Refuses to guess when several are present.
+    """
+    if not 0 <= args.percent <= 100:
+        die("--percent must be between 0 and 100")
+    stem = "/api/admin/projects/%s/features/%s/environments/%s/strategies" % (
+        urllib.parse.quote(args.project), urllib.parse.quote(args.name),
+        urllib.parse.quote(args.env))
+    existing = request("GET", stem, base, token)
+    strategies = existing if isinstance(existing, list) else existing.get("strategies", [])
+    flexible = [s for s in strategies if s.get("name") == "flexibleRollout"]
+    params = {"rollout": str(args.percent), "stickiness": args.stickiness,
+              "groupId": args.group_id or args.name}
+    if len(flexible) > 1:
+        die("%s has %d flexibleRollout strategies in '%s'. Edit it in the UI, or use "
+            "'unleash api' to target one by id." % (args.name, len(flexible), args.env))
+    if flexible:
+        sid = flexible[0].get("id")
+        data = request("PUT", "%s/%s" % (stem, urllib.parse.quote(str(sid))), base, token,
+                       body={"name": "flexibleRollout", "parameters": params,
+                             "constraints": flexible[0].get("constraints", []),
+                             "segments": flexible[0].get("segments", [])})
+        action = "updated"
+    else:
+        data = request("POST", stem, base, token,
+                       body={"name": "flexibleRollout", "parameters": params})
+        action = "added"
+    if not args.json:
+        print("%s flexibleRollout on %s in '%s': %d%% (stickiness: %s)"
+              % (action, args.name, args.env, args.percent, args.stickiness))
+        print("note: the flag must also be enabled in that environment to serve traffic.")
+    emit_write(args, data)
+
+
+def cmd_flag_strategies(args, base, token):
+    path = "/api/admin/projects/%s/features/%s/environments/%s/strategies" % (
+        urllib.parse.quote(args.project), urllib.parse.quote(args.name),
+        urllib.parse.quote(args.env))
+    data = request("GET", path, base, token)
+    strategies = data if isinstance(data, list) else data.get("strategies", [])
+    rows = [[s.get("id"), s.get("name"), s.get("title"),
+             json.dumps(s.get("parameters") or {})] for s in strategies]
+    emit(args, data, rows, ["id", "name", "title", "parameters"])
+
+
+def cmd_flag_archive(args, base, token):
+    path = "/api/admin/projects/%s/features/%s" % (
+        urllib.parse.quote(args.project), urllib.parse.quote(args.name))
+    data = request("DELETE", path, base, token)
+    if not args.json:
+        print("archived '%s' in project '%s'. It is recoverable from the archive."
+              % (args.name, args.project))
+    emit_write(args, data)
+
+
+def cmd_events(args, base, token):
+    # /api/admin/events takes only `project`. There is no server-side limit, so the
+    # endpoint returns the whole log and --limit is applied here. Passing limit as a
+    # query param would be silently ignored, which is worse than doing nothing.
+    data = request("GET", "/api/admin/events", base, token,
+                   query={"project": args.project})
+    events = data.get("events", data) if isinstance(data, dict) else data
+    total = len(events)
+    try:
+        limit = int(args.limit)
+    except (TypeError, ValueError):
+        die("--limit must be an integer")
+    if limit > 0:
+        events = events[:limit]
+    rows = [[e.get("id"), (e.get("createdAt") or "")[:19], e.get("type"),
+             e.get("createdBy"), e.get("featureName") or e.get("project") or ""]
+            for e in events]
+    if not args.json and total > len(events):
+        sys.stderr.write("(showing %d of %d events; --limit 0 for all)\n"
+                         % (len(events), total))
+    emit(args, data if args.json else events, rows, ["id", "created", "type", "by", "target"])
+
+
+def cmd_api(args, base, token):
+    body = None
+    if args.data:
+        try:
+            body = json.loads(args.data)
+        except json.JSONDecodeError as exc:
+            die("--data is not valid JSON: %s" % exc)
+    path = args.path if args.path.startswith("/") else "/" + args.path
+    data = request(args.method.upper(), path, base, token, body=body)
+    json.dump(data, sys.stdout, indent=2)
+    sys.stdout.write("\n")
+
+
+# ---------------------------------------------------------------- parser
+
+
+def build_parser():
+    p = argparse.ArgumentParser(
+        prog="unleash",
+        description="Non-interactive CLI for the Unleash Admin API.")
+    p.add_argument("--profile", default=os.environ.get("UNLEASH_PROFILE", "default"),
+                   help="instance profile from ~/.unleash.env (default: default)")
+    p.add_argument("--base-url", help="override the profile's base URL")
+    p.add_argument("--json", action="store_true", help="raw JSON instead of a table")
+
+    # Same globals repeated as a parent so they are accepted after the subcommand
+    # too: `unleash whoami --json` used to be an argparse error.
+    _common = argparse.ArgumentParser(add_help=False)
+    _common.add_argument("--profile", default=argparse.SUPPRESS)
+    _common.add_argument("--base-url", default=argparse.SUPPRESS)
+    _common.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    sub = p.add_subparsers(dest="command", required=True)
+
+    def with_project(sp, required=False):
+        sp.add_argument("--project", "-p",
+                        default=None if required else os.environ.get("UNLEASH_PROJECT", "default"),
+                        required=required, help="project id (default: default)")
+
+    sub.add_parser("whoami", parents=[_common], help="show the identity behind the current token"
+                   ).set_defaults(func=cmd_whoami)
+
+    pr = sub.add_parser("projects", help="project commands").add_subparsers(
+        dest="sub", required=True)
+    pr.add_parser("list", parents=[_common], help="list projects").set_defaults(func=cmd_projects_list)
+
+    ev = sub.add_parser("envs", help="environment commands").add_subparsers(
+        dest="sub", required=True)
+    ev.add_parser("list", parents=[_common], help="list environments").set_defaults(func=cmd_envs_list)
+
+    st = sub.add_parser("strategies", help="strategy type commands").add_subparsers(
+        dest="sub", required=True)
+    st.add_parser("list", parents=[_common], help="list available strategy types"
+                  ).set_defaults(func=cmd_strategies_list)
+
+    fl = sub.add_parser("flags", help="search across flags").add_subparsers(
+        dest="sub", required=True)
+    fls = fl.add_parser("list", parents=[_common], help="search and list flags")
+    fls.add_argument("--query", "-q", help="match on flag name or tag")
+    fls.add_argument("--project", "-p", help="restrict to one project id")
+    fls.add_argument("--type", help="release, experiment, operational, kill-switch, permission")
+    fls.add_argument("--tag", help="tag filter, for example 'simple:my-tag'")
+    fls.add_argument("--limit", default="50", help="page size (default: 50)")
+    fls.add_argument("--sort-by", default="createdAt", help="sort field (default: createdAt)")
+    fls.add_argument("--sort-order", default="desc", choices=["asc", "desc"])
+    fls.set_defaults(func=cmd_flags_list)
+
+    fg = sub.add_parser("flag", help="single flag commands").add_subparsers(
+        dest="sub", required=True)
+
+    g = fg.add_parser("get", parents=[_common], help="show one flag and its environments")
+    g.add_argument("name")
+    with_project(g)
+    g.set_defaults(func=cmd_flag_get)
+
+    c = fg.add_parser("create", parents=[_common], help="create a flag")
+    c.add_argument("name")
+    with_project(c)
+    c.add_argument("--type", default="release",
+                   choices=["release", "experiment", "operational", "kill-switch", "permission"])
+    c.add_argument("--description")
+    c.add_argument("--impression-data", action="store_true")
+    c.set_defaults(func=cmd_flag_create)
+
+    t = fg.add_parser("toggle", parents=[_common], help="turn a flag on or off in one environment")
+    t.add_argument("name")
+    with_project(t)
+    t.add_argument("--env", "-e", required=True, help="environment name")
+    state = t.add_mutually_exclusive_group(required=True)
+    state.add_argument("--on", action="store_true")
+    state.add_argument("--off", action="store_true")
+    t.set_defaults(func=cmd_flag_toggle)
+
+    r = fg.add_parser("rollout", parents=[_common], help="set gradual rollout percentage")
+    r.add_argument("name")
+    with_project(r)
+    r.add_argument("--env", "-e", required=True)
+    r.add_argument("--percent", type=int, required=True, help="0 to 100")
+    r.add_argument("--stickiness", default="default")
+    r.add_argument("--group-id", help="rollout group id (default: the flag name)")
+    r.set_defaults(func=cmd_flag_rollout)
+
+    s = fg.add_parser("strategies", parents=[_common], help="list a flag's strategies in one environment")
+    s.add_argument("name")
+    with_project(s)
+    s.add_argument("--env", "-e", required=True)
+    s.set_defaults(func=cmd_flag_strategies)
+
+    a = fg.add_parser("archive", parents=[_common], help="archive a flag (recoverable)")
+    a.add_argument("name")
+    with_project(a)
+    a.set_defaults(func=cmd_flag_archive)
+
+    e = sub.add_parser("events", parents=[_common], help="recent audit events")
+    e.add_argument("--limit", default="25", help="rows to show, 0 for all (applied client-side)")
+    e.add_argument("--project", "-p", help="restrict to one project id")
+    e.set_defaults(func=cmd_events)
+
+    ap = sub.add_parser("api", parents=[_common], help="raw Admin API call (escape hatch)")
+    ap.add_argument("method", help="GET, POST, PUT, PATCH, DELETE")
+    ap.add_argument("path", help="for example /api/admin/projects")
+    ap.add_argument("--data", "-d", help="JSON request body")
+    ap.set_defaults(func=cmd_api)
+
+    return p
+
+
+def main():
+    load_env_file()
+    args = build_parser().parse_args()
+    base, token = resolve_target(args.profile, args.base_url)
+    args.func(args, base, token)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        sys.exit(130)
